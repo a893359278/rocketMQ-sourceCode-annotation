@@ -427,6 +427,8 @@ public class MappedFileQueue {
         MappedFile mappedFile = this.findMappedFileByOffset(this.flushedWhere, this.flushedWhere == 0);
         if (mappedFile != null) {
             long tmpTimeStamp = mappedFile.getStoreTimestamp();
+
+            // todo 执行刷盘
             int offset = mappedFile.flush(flushLeastPages);
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.flushedWhere;

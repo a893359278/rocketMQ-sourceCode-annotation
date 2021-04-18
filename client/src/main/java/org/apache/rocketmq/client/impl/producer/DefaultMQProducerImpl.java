@@ -553,17 +553,23 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
         long endTimestamp = beginTimestampFirst;
+
+        // todo  到 namesrv 查找 topic
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             boolean callTimeout = false;
             MessageQueue mq = null;
             Exception exception = null;
             SendResult sendResult = null;
+
+            //todo 同步发送时，最多有 3 次发送的机会。
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
             int times = 0;
             String[] brokersSent = new String[timesTotal];
             for (; times < timesTotal; times++) {
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
+
+                // todo 选择一个队列发送
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName);
                 if (mqSelected != null) {
                     mq = mqSelected;
@@ -571,6 +577,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     try {
                         beginTimestampPrev = System.currentTimeMillis();
                         if (times > 0) {
+                            // todo namespace 的本质其实是在 topic 的前面在带上 namespace 的名称
+                            // todo 即，其实是发往 2 个不同的 topic
                             //Reset topic with namespace during resend.
                             msg.setTopic(this.defaultMQProducer.withNamespace(msg.getTopic()));
                         }
@@ -580,16 +588,19 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             break;
                         }
 
+                        // todo 发送消息
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false);
                         switch (communicationMode) {
+                            // todo 异步的时候，发送消息完，直接返回
                             case ASYNC:
                                 return null;
                             case ONEWAY:
                                 return null;
                             case SYNC:
                                 if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                                    // todo 发送失败时，是否使用其他的 broker 进行重试，默认 false
                                     if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {
                                         continue;
                                     }
@@ -601,6 +612,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         }
                     } catch (RemotingException e) {
                         endTimestamp = System.currentTimeMillis();
+                        // todo 更新失败的次数
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
                         log.warn(String.format("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq), e);
                         log.warn(msg.toString());
@@ -686,9 +698,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     private TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
+        // todo 优先从本地获取
         TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
         if (null == topicPublishInfo || !topicPublishInfo.ok()) {
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
+
+            // todo 向 namesrv 查找 topic 信息
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
@@ -696,6 +711,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         if (topicPublishInfo.isHaveTopicRouterInfo() || topicPublishInfo.ok()) {
             return topicPublishInfo;
         } else {
+            /**
+             * todo
+             * 当 broker 端 autoCreateTopicEnable = true,
+             * 并且 producer 是往一个不存在的主题发送消息时，就会走这段逻辑。
+             * 因为上面通过 topic 会获取不到 该topic 路由元信息
+             */
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic, true, this.defaultMQProducer);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
             return topicPublishInfo;
@@ -777,10 +798,14 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     this.executeSendMessageHookBefore(context);
                 }
 
+                // todo 构建请求头
                 SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
                 requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
                 requestHeader.setTopic(msg.getTopic());
+
+                // todo 这里的默认队列为 TBW102
                 requestHeader.setDefaultTopic(this.defaultMQProducer.getCreateTopicKey());
+                //todo 获取 producer 配置的， topic 默认 队列数量
                 requestHeader.setDefaultTopicQueueNums(this.defaultMQProducer.getDefaultTopicQueueNums());
                 requestHeader.setQueueId(mq.getQueueId());
                 requestHeader.setSysFlag(sysFlag);
@@ -790,6 +815,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 requestHeader.setReconsumeTimes(0);
                 requestHeader.setUnitMode(this.isUnitMode());
                 requestHeader.setBatch(msg instanceof MessageBatch);
+
+                // todo 如果是重试消息
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                     String reconsumeTimes = MessageAccessor.getReconsumeTime(msg);
                     if (reconsumeTimes != null) {
@@ -818,6 +845,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             msg.setBody(prevBody);
                         }
 
+                        // todo namespace unpack
                         if (topicWithNamespace) {
                             if (!messageCloned) {
                                 tmpMessage = MessageAccessor.cloneMessage(msg);
@@ -830,6 +858,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         if (timeout < costTimeAsync) {
                             throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
                         }
+
+                        // todo 发送消息
                         sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
                             brokerAddr,
                             mq.getBrokerName(),
@@ -1213,10 +1243,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         Validators.checkMessage(msg, this.defaultMQProducer);
 
+        // 用消息的属性，标识，该消息是半消息
         SendResult sendResult = null;
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TRANSACTION_PREPARED, "true");
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_PRODUCER_GROUP, this.defaultMQProducer.getProducerGroup());
         try {
+            // 发送半消息
             sendResult = this.send(msg);
         } catch (Exception e) {
             throw new MQClientException("send message Exception", e);
@@ -1237,6 +1269,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     if (null != localTransactionExecuter) {
                         localTransactionState = localTransactionExecuter.executeLocalTransactionBranch(msg, arg);
                     } else if (transactionListener != null) {
+
+                        // 执行本地事务，正常返回 UNKONW
                         log.debug("Used new transaction API");
                         localTransactionState = transactionListener.executeLocalTransaction(msg, arg);
                     }
@@ -1264,6 +1298,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 break;
         }
 
+        // 结束事务，告知 broker 本地事务执行情况.
         try {
             this.endTransaction(sendResult, localTransactionState, localException);
         } catch (Exception e) {
@@ -1321,6 +1356,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         requestHeader.setTranStateTableOffset(sendResult.getQueueOffset());
         requestHeader.setMsgId(sendResult.getMsgId());
         String remark = localException != null ? ("executeLocalTransactionBranch exception: " + localException.toString()) : null;
+
+        // 单向发送，告诉 服务端，本地事务执行情况
         this.mQClientFactory.getMQClientAPIImpl().endTransactionOneway(brokerAddr, requestHeader, remark,
             this.defaultMQProducer.getSendMsgTimeout());
     }

@@ -48,9 +48,13 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 public class ScheduleMessageService extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    // 定时消息同一主题
     public static final String SCHEDULE_TOPIC = "SCHEDULE_TOPIC_XXXX";
+    // 第一次延迟调度的时间
     private static final long FIRST_DELAY_TIME = 1000L;
+    // 每一延时级别调度一次后延迟该时间间隔后再放入池中
     private static final long DELAY_FOR_A_WHILE = 100L;
+    // 发生异常后，延迟该时间后再继续参与调度
     private static final long DELAY_FOR_A_PERIOD = 10000L;
 
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
@@ -114,6 +118,7 @@ public class ScheduleMessageService extends ConfigManager {
     public void start() {
         if (started.compareAndSet(false, true)) {
             this.timer = new Timer("ScheduleMessageTimerThread", true);
+            // 获取配置的延迟等级
             for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
                 Integer level = entry.getKey();
                 Long timeDelay = entry.getValue();
@@ -122,11 +127,13 @@ public class ScheduleMessageService extends ConfigManager {
                     offset = 0L;
                 }
 
+                // 初始化延迟调度任务
                 if (timeDelay != null) {
                     this.timer.schedule(new DeliverDelayedMessageTimerTask(level, offset), FIRST_DELAY_TIME);
                 }
             }
 
+            // 默认每隔 10s，执行一次持久化
             this.timer.scheduleAtFixedRate(new TimerTask() {
 
                 @Override
@@ -261,6 +268,7 @@ public class ScheduleMessageService extends ConfigManager {
         }
 
         public void executeOnTimeup() {
+            // 从队列中获取消息
             ConsumeQueue cq =
                 ScheduleMessageService.this.defaultMessageStore.findConsumeQueue(SCHEDULE_TOPIC,
                     delayLevel2QueueId(delayLevel));
@@ -268,15 +276,18 @@ public class ScheduleMessageService extends ConfigManager {
             long failScheduleOffset = offset;
 
             if (cq != null) {
+                // 根据偏移量，获取消息
                 SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(this.offset);
                 if (bufferCQ != null) {
                     try {
                         long nextOffset = offset;
                         int i = 0;
                         ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
+                        // 标准的 consumeQueue 条目为 20 个字节
                         for (; i < bufferCQ.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
                             long offsetPy = bufferCQ.getByteBuffer().getLong();
                             int sizePy = bufferCQ.getByteBuffer().getInt();
+                            // 延迟消息时，tagsCode 为投递的时间戳
                             long tagsCode = bufferCQ.getByteBuffer().getLong();
 
                             if (cq.isExtAddr(tagsCode)) {
@@ -298,14 +309,18 @@ public class ScheduleMessageService extends ConfigManager {
 
                             long countdown = deliverTimestamp - now;
 
+                            // 消息延迟时间到了
                             if (countdown <= 0) {
+                                // 查找消息
                                 MessageExt msgExt =
                                     ScheduleMessageService.this.defaultMessageStore.lookMessageByOffset(
                                         offsetPy, sizePy);
 
                                 if (msgExt != null) {
                                     try {
+                                        // 还原原消息
                                         MessageExtBrokerInner msgInner = this.messageTimeup(msgExt);
+                                        // 如果是事务消息，则丢弃。
                                         if (MixAll.RMQ_SYS_TRANS_HALF_TOPIC.equals(msgInner.getTopic())) {
                                             log.error("[BUG] the real topic of schedule msg is {}, discard the msg. msg={}",
                                                     msgInner.getTopic(), msgInner);

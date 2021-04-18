@@ -62,6 +62,10 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         super(brokerController);
     }
 
+    /**
+     * todo
+     * 处理来自客户端的请求
+     */
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
                                           RemotingCommand request) throws RemotingCommandException {
@@ -82,6 +86,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 if (requestHeader.isBatch()) {
                     response = this.sendBatchMessage(ctx, request, mqtraceContext, requestHeader);
                 } else {
+                    System.out.println("处理发送消息");
                     response = this.sendMessage(ctx, request, mqtraceContext, requestHeader);
                 }
 
@@ -318,6 +323,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
 
         response.setCode(-1);
+
+        // todo 消息检查
         super.msgCheck(ctx, requestHeader, response);
         if (response.getCode() != -1) {
             return response;
@@ -336,6 +343,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         msgInner.setTopic(requestHeader.getTopic());
         msgInner.setQueueId(queueIdInt);
 
+        // todo 消费重试次数过多，直接到 DLQ 队列 %DLQ%，
         if (!handleRetryAndDLQ(requestHeader, response, request, msgInner, topicConfig)) {
             return response;
         }
@@ -362,7 +370,10 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                         + "] sending transaction message is forbidden");
                 return response;
             }
+
+            // 半消息
             putMessageResult = this.brokerController.getTransactionalMessageService().prepareMessage(msgInner);
+
         } else {
             putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
         }

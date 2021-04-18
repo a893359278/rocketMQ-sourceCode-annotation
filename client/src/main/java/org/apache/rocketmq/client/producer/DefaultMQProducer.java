@@ -362,6 +362,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     public void send(Message msg,
         SendCallback sendCallback) throws MQClientException, RemotingException, InterruptedException {
         msg.setTopic(withNamespace(msg.getTopic()));
+        // todo
+        System.out.println(String.format("topic [%s], namespace [%s]", msg.getTopic(), getNamespace()));
         this.defaultMQProducerImpl.send(msg, sendCallback);
     }
 

@@ -35,8 +35,8 @@ public class Consumer {
         /*
          * Instantiate with specified consumer group name.
          */
-        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("please_rename_unique_group_name_4");
-
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("test", "please_rename_unique_group_name_4");
+        consumer.setNamesrvAddr("127.0.0.1:9876");
         /*
          * Specify name server addresses.
          * <p/>
@@ -67,6 +67,7 @@ public class Consumer {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                 ConsumeConcurrentlyContext context) {
+
                 System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }

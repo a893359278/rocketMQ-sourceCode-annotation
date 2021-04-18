@@ -307,6 +307,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                     switch (pullResult.getPullStatus()) {
                         case FOUND:
+                            log.error("成功拉取到消息");
                             long prevRequestOffset = pullRequest.getNextOffset();
                             pullRequest.setNextOffset(pullResult.getNextBeginOffset());
                             long pullRT = System.currentTimeMillis() - beginTimestamp;

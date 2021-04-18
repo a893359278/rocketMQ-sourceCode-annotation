@@ -280,12 +280,12 @@
         <appender-ref ref="RocketmqWaterMarkAppender"/>
     </logger>
 
-    <logger name="RocketmqCommon" additivity="false">
+    <logger name="RocketmqCommon" additivity="true">
         <level value="INFO"/>
         <appender-ref ref="RocketmqBrokerAppender"/>
     </logger>
 
-    <logger name="RocketmqStore" additivity="false">
+    <logger name="RocketmqStore" additivity="true">
         <level value="INFO"/>
         <appender-ref ref="RocketmqStoreAppender"/>
     </logger>
@@ -333,5 +333,6 @@
     <root>
         <level value="INFO"/>
         <appender-ref ref="DefaultAppender"/>
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

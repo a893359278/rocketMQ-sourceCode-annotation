@@ -296,6 +296,7 @@ public class RouteInfoManager {
         try {
             try {
                 this.lock.writeLock().lockInterruptibly();
+                System.out.println(String.format("unregisterBroker, 移出 Broker [%s]", this.brokerLiveTable.get(brokerAddr)));
                 BrokerLiveInfo brokerLiveInfo = this.brokerLiveTable.remove(brokerAddr);
                 log.info("unregisterBroker, remove from brokerLiveTable {}, {}",
                     brokerLiveInfo != null ? "OK" : "Failed",
@@ -430,8 +431,11 @@ public class RouteInfoManager {
         Iterator<Entry<String, BrokerLiveInfo>> it = this.brokerLiveTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, BrokerLiveInfo> next = it.next();
+            //todo 最后一次注册的时间
             long last = next.getValue().getLastUpdateTimestamp();
+            //todo 超过 120s 未注册，直接将 broker 剔除
             if ((last + BROKER_CHANNEL_EXPIRED_TIME) < System.currentTimeMillis()) {
+                // 关闭与 broker 的 channel
                 RemotingUtil.closeChannel(next.getValue().getChannel());
                 it.remove();
                 log.warn("The broker channel expired, {} {}ms", next.getKey(), BROKER_CHANNEL_EXPIRED_TIME);
@@ -441,6 +445,7 @@ public class RouteInfoManager {
     }
 
     public void onChannelDestroy(String remoteAddr, Channel channel) {
+        System.out.println("清理 无效连接");
         String brokerAddrFound = null;
         if (channel != null) {
             try {
@@ -473,6 +478,7 @@ public class RouteInfoManager {
 
             try {
                 try {
+                    System.out.println(String.format("开始清理断开的连接 [%s]", brokerAddrFound));
                     this.lock.writeLock().lockInterruptibly();
                     this.brokerLiveTable.remove(brokerAddrFound);
                     this.filterServerTable.remove(brokerAddrFound);
@@ -491,6 +497,7 @@ public class RouteInfoManager {
                             if (brokerAddr.equals(brokerAddrFound)) {
                                 brokerNameFound = brokerData.getBrokerName();
                                 it.remove();
+                                System.out.println(String.format("remove brokerAddr[{%s}, {%s}] from brokerAddrTable, because channel destroyed", brokerId, brokerAddr));
                                 log.info("remove brokerAddr[{}, {}] from brokerAddrTable, because channel destroyed",
                                     brokerId, brokerAddr);
                                 break;
@@ -500,6 +507,7 @@ public class RouteInfoManager {
                         if (brokerData.getBrokerAddrs().isEmpty()) {
                             removeBrokerName = true;
                             itBrokerAddrTable.remove();
+                            System.out.println(String.format("remove brokerName[{%s}] from brokerAddrTable, because channel destroyed", brokerData.getBrokerName()));
                             log.info("remove brokerName[{}] from brokerAddrTable, because channel destroyed",
                                 brokerData.getBrokerName());
                         }
@@ -753,6 +761,10 @@ public class RouteInfoManager {
 }
 
 class BrokerLiveInfo {
+
+    /**
+     * 最后一次更新时间， namesrv 收到 broker 心跳后，会更新该信息。
+     */
     private long lastUpdateTimestamp;
     private DataVersion dataVersion;
     private Channel channel;

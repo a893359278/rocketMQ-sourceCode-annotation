@@ -362,6 +362,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     public RemotingCommand invokeSync(String addr, final RemotingCommand request, long timeoutMillis)
         throws InterruptedException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException {
         long beginStartTime = System.currentTimeMillis();
+        // todo 获取 namesrv 地址
         final Channel channel = this.getAndCreateChannel(addr);
         if (channel != null && channel.isActive()) {
             try {
@@ -374,10 +375,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(channel), request, response);
                 return response;
             } catch (RemotingSendRequestException e) {
+                // todo 非超时类异常，直接关闭通道
                 log.warn("invokeSync: send request exception, so close the channel[{}]", addr);
                 this.closeChannel(addr, channel);
                 throw e;
             } catch (RemotingTimeoutException e) {
+                // todo 超时，开启 超时则关闭 socket，那么则关闭通道
                 if (nettyClientConfig.isClientCloseSocketIfTimeout()) {
                     this.closeChannel(addr, channel);
                     log.warn("invokeSync: close socket because of timeout, {}ms, {}", timeoutMillis, addr);
@@ -516,10 +519,13 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         if (channel != null && channel.isActive()) {
             try {
                 doBeforeRpcHooks(addr, request);
+
+                // todo 调用，直接不重试
                 long costTime = System.currentTimeMillis() - beginStartTime;
                 if (timeoutMillis < costTime) {
                     throw new RemotingTooMuchRequestException("invokeAsync call timeout");
                 }
+
                 this.invokeAsyncImpl(channel, request, timeoutMillis - costTime, invokeCallback);
             } catch (RemotingSendRequestException e) {
                 log.warn("invokeAsync: send request exception, so close the channel[{}]", addr);

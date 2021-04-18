@@ -1478,6 +1478,7 @@ public class DefaultMessageStore implements MessageStore {
         }, 6, TimeUnit.SECONDS);
     }
 
+    // todo consumeQueue 分发器
     class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher {
 
         @Override
@@ -1486,6 +1487,7 @@ public class DefaultMessageStore implements MessageStore {
             switch (tranType) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE:
                 case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                    log.error("分发 consumerQueue");
                     DefaultMessageStore.this.putMessagePositionInfo(request);
                     break;
                 case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
@@ -1495,10 +1497,12 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    // todo 分发 index
     class CommitLogDispatcherBuildIndex implements CommitLogDispatcher {
 
         @Override
         public void dispatch(DispatchRequest request) {
+            log.error("分发 index");
             if (DefaultMessageStore.this.messageStoreConfig.isMessageIndexEnable()) {
                 DefaultMessageStore.this.indexService.buildIndex(request);
             }
@@ -1774,6 +1778,8 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+
+    // TODO 每隔 1ms 转发 commitLog 消息线程
     class ReputMessageService extends ServiceThread {
 
         private volatile long reputFromOffset = 0;
@@ -1836,6 +1842,7 @@ public class DefaultMessageStore implements MessageStore {
 
                             if (dispatchRequest.isSuccess()) {
                                 if (size > 0) {
+                                    System.out.println("commit log 开始分发消息");
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()

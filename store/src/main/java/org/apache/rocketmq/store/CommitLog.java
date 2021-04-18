@@ -343,6 +343,7 @@ public class CommitLog {
                             delayLevel = this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel();
                         }
 
+                        //TODO 如果是延迟消息，那么会将消息的到期时间，存储为 tagsCode
                         if (delayLevel > 0) {
                             tagsCode = this.defaultMessageStore.getScheduleMessageService().computeDeliverTimestamp(delayLevel,
                                 storeTimestamp);
@@ -675,9 +676,11 @@ public class CommitLog {
 
     public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt) {
         // Synchronization flush
+        System.out.println("刷盘策略"  + this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType());
         if (FlushDiskType.SYNC_FLUSH == this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
             final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
-            if (messageExt.isWaitStoreMsgOK()) {
+            if (messageExt.isWaitStoreMsgOK()) { // 在创建消息时，该属性，默认被填写为 true
+                System.out.println("isWaitStoreMsgOK true,我直接刷盘拉");
                 GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes());
                 service.putRequest(request);
                 boolean flushOK = request.waitForFlush(this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
@@ -687,11 +690,13 @@ public class CommitLog {
                     putMessageResult.setPutMessageStatus(PutMessageStatus.FLUSH_DISK_TIMEOUT);
                 }
             } else {
+                System.out.println("isWaitStoreMsgOK false 我直接刷盘了");
                 service.wakeup();
             }
         }
         // Asynchronous flush
         else {
+            System.out.println("??  难道我是异步刷盘？？");
             if (!this.defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
                 flushCommitLogService.wakeup();
             } else {
@@ -945,6 +950,10 @@ public class CommitLog {
         protected static final int RETRY_TIMES_OVER = 10;
     }
 
+
+    // todo 异步刷盘，1 个线程提交写入偏移量， 1个线程专门做刷盘
+    // todo 默认 200ms 写入 commitlog 偏移量
+    // transientStorePoolEnable = true
     class CommitRealTimeService extends FlushCommitLogService {
 
         private long lastCommitTimestamp = 0;
@@ -958,8 +967,11 @@ public class CommitLog {
         public void run() {
             CommitLog.log.info(this.getServiceName() + " service started");
             while (!this.isStopped()) {
+
+                // 默认间隔 200ms 将 ByteBuffer 新追加的内容的数据提交到 MappedByteBuffer 中
                 int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitIntervalCommitLog();
 
+                // 每次刷盘，至少有多少页数据。1 页 正常 = 4kb
                 int commitDataLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogLeastPages();
 
                 int commitDataThoroughInterval =
@@ -972,23 +984,32 @@ public class CommitLog {
                 }
 
                 try {
+                    System.out.println("提交 commitLog 到内存");
+                    // 当 commitDataLeastPages <= 0 时，只要 写指针大于已刷的指针，那么则进行刷盘
+                    // 当 commitDataLeastPages > 0 时，新写入的内容的大小必须大于 commitDataLeastPages
+                    // todo 提交成功后，将 committedPosition 移动到本次提交的位置，wrotePosition 继续向前
                     boolean result = CommitLog.this.mappedFileQueue.commit(commitDataLeastPages);
                     long end = System.currentTimeMillis();
                     if (!result) {
+                        // todo 表示，部分数据已被提交，唤醒刷盘线程刷盘
                         this.lastCommitTimestamp = end; // result = false means some data committed.
                         //now wake up flush thread.
                         flushCommitLogService.wakeup();
                     }
 
+                    // todo 花费时间过长，会有日志
                     if (end - begin > 500) {
                         log.info("Commit data to file costs {} ms", end - begin);
                     }
+
+                    //todo 等待 200ms
                     this.waitForRunning(interval);
                 } catch (Throwable e) {
                     CommitLog.log.error(this.getServiceName() + " service has exception. ", e);
                 }
             }
 
+            // 刷盘线程被停止，直接将 MappedByteBuffer 中的数据全部提交
             boolean result = false;
             for (int i = 0; i < RETRY_TIMES_OVER && !result; i++) {
                 result = CommitLog.this.mappedFileQueue.commit(0);
@@ -998,6 +1019,8 @@ public class CommitLog {
         }
     }
 
+    // todo 异步刷盘线程，
+    // todo 真正做刷盘的线程, 每 500ms 刷磁盘
     class FlushRealTimeService extends FlushCommitLogService {
         private long lastFlushTimestamp = 0;
         private long printTimes = 0;
@@ -1006,11 +1029,17 @@ public class CommitLog {
             CommitLog.log.info(this.getServiceName() + " service started");
 
             while (!this.isStopped()) {
+
+                // TODO false 用 await 方法等待，这是使用 AQS 等待
+                // true sleep 等待
                 boolean flushCommitLogTimed = CommitLog.this.defaultMessageStore.getMessageStoreConfig().isFlushCommitLogTimed();
 
+                // todo 默认每隔 500ms 刷盘
                 int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushIntervalCommitLog();
+                // todo 每次刷盘至少多少页
                 int flushPhysicQueueLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogLeastPages();
 
+                // todo 2次刷盘任务 最大间隔
                 int flushPhysicQueueThoroughInterval =
                     CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogThoroughInterval();
 
@@ -1020,6 +1049,8 @@ public class CommitLog {
                 long currentTimeMillis = System.currentTimeMillis();
                 if (currentTimeMillis >= (this.lastFlushTimestamp + flushPhysicQueueThoroughInterval)) {
                     this.lastFlushTimestamp = currentTimeMillis;
+
+                    // todo 2次刷盘间隔大于10s, 直接忽略，强制刷盘
                     flushPhysicQueueLeastPages = 0;
                     printFlushProgress = (printTimes++ % 10) == 0;
                 }
@@ -1031,17 +1062,24 @@ public class CommitLog {
                         this.waitForRunning(interval);
                     }
 
+                    // todo 打印刷盘线程
                     if (printFlushProgress) {
                         this.printFlushProgress();
                     }
 
                     long begin = System.currentTimeMillis();
+
+                    // 执行刷盘动作
                     CommitLog.this.mappedFileQueue.flush(flushPhysicQueueLeastPages);
+
+                    //todo 刷盘完毕后，更新检测点 commitlog 文件的更新时间戳
                     long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
                     if (storeTimestamp > 0) {
                         CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
                     }
                     long past = System.currentTimeMillis() - begin;
+
+                    // todo 刷盘过久
                     if (past > 500) {
                         log.info("Flush data to disk costs {} ms", past);
                     }
@@ -1079,6 +1117,7 @@ public class CommitLog {
         }
     }
 
+
     public static class GroupCommitRequest {
         private final long nextOffset;
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -1108,6 +1147,8 @@ public class CommitLog {
         }
     }
 
+    // todo 同步刷盘
+    // todo 同步刷盘比较简单，就是直接刷盘
     /**
      * GroupCommit Service
      */
@@ -1133,6 +1174,7 @@ public class CommitLog {
         private void doCommit() {
             synchronized (this.requestsRead) {
                 if (!this.requestsRead.isEmpty()) {
+                    System.out.println("我是同步刷盘");
                     for (GroupCommitRequest req : this.requestsRead) {
                         // There may be a message in the next file, so a maximum of
                         // two times the flush

@@ -887,6 +887,7 @@ public class BrokerController {
             this.registerBrokerAll(true, false, true);
         }
 
+        // broker 启动后，延迟 10 秒，每隔 30 秒向 namesrv 发送心跳包
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -898,6 +899,8 @@ public class BrokerController {
                 }
             }
         }, 1000 * 10, Math.max(10000, Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)), TimeUnit.MILLISECONDS);
+
+        // brokerConfig.getRegisterNameServerPeriod()  = 30000
 
         if (this.brokerStatsManager != null) {
             this.brokerStatsManager.start();
@@ -1009,7 +1012,9 @@ public class BrokerController {
     }
 
     public String getHAServerAddr() {
-        return this.brokerConfig.getBrokerIP2() + ":" + this.messageStoreConfig.getHaListenPort();
+        String haServerAddr = this.brokerConfig.getBrokerIP2() + ":" + this.messageStoreConfig.getHaListenPort();
+        System.out.println(String.format("getHAServerAddr HAServerAddr [%s]", haServerAddr));
+        return haServerAddr;
     }
 
     public RebalanceLockManager getRebalanceLockManager() {

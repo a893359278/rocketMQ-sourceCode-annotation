@@ -16,8 +16,12 @@
  */
 package org.apache.rocketmq.example.quickstart;
 
+import java.util.concurrent.CountDownLatch;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.SendMessageContext;
+import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -31,8 +35,9 @@ public class Producer {
         /*
          * Instantiate with a producer group name.
          */
-        DefaultMQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
-
+        DefaultMQProducer producer = new DefaultMQProducer("test", "please_rename_unique_group_name");
+        producer.setNamesrvAddr("localhost:9876");
+        CountDownLatch count = new CountDownLatch(1);
         /*
          * Specify name server addresses.
          * <p/>
@@ -44,29 +49,43 @@ public class Producer {
          * }
          * </pre>
          */
-
         /*
          * Launch the instance.
          */
         producer.start();
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1; i++) {
             try {
 
                 /*
                  * Create a message instance, specifying topic, tag and message body.
                  */
-                Message msg = new Message("TopicTest" /* Topic */,
+                Message msg = new Message("zouLeTopic" /* Topic */,
                     "TagA" /* Tag */,
                     ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
                 );
-
                 /*
                  * Call send message to deliver message to one of brokers.
                  */
-                SendResult sendResult = producer.send(msg);
+//                SendResult sendResult = producer.send(msg);
+                producer.send(msg, new SendCallback() {
+                    @Override
+                    public void onSuccess(SendResult sendResult) {
+                        System.out.printf("%s%n", sendResult);
+                        count.countDown();
+                    }
 
-                System.out.printf("%s%n", sendResult);
+                    @Override
+                    public void onException(Throwable e) {
+                        e.printStackTrace();
+                        count.countDown();
+                    }
+                });
+
+//                Message m2 = new Message("TopicTest", "qqwewqe".getBytes());
+//                producer.send(m2);
+
+//                System.out.printf("%s%n", sendResult);
             } catch (Exception e) {
                 e.printStackTrace();
                 Thread.sleep(1000);
@@ -76,6 +95,7 @@ public class Producer {
         /*
          * Shut down once the producer instance is not longer in use.
          */
+        count.await();
         producer.shutdown();
     }
 }

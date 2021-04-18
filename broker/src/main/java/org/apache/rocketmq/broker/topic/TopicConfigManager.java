@@ -164,21 +164,26 @@ public class TopicConfigManager extends ConfigManager {
         try {
             if (this.lockTopicConfigTable.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
+                    // todo 如果 topic 没有创建，这里一定为 Null
                     topicConfig = this.topicConfigTable.get(topic);
                     if (topicConfig != null)
                         return topicConfig;
 
+                    // todo 获取 默认 topic
                     TopicConfig defaultTopicConfig = this.topicConfigTable.get(defaultTopic);
                     if (defaultTopicConfig != null) {
                         if (defaultTopic.equals(MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
+                            System.out.println("默认主题 == TBW102");
                             if (!this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
                                 defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
+                                System.out.println("未开启 自动创建主题，队列权限被设置为 可读可写");
                             }
                         }
 
                         if (PermName.isInherited(defaultTopicConfig.getPerm())) {
                             topicConfig = new TopicConfig(topic);
 
+                            // todo 选择创建最小的队列数量
                             int queueNums =
                                 clientDefaultTopicQueueNums > defaultTopicConfig.getWriteQueueNums() ? defaultTopicConfig
                                     .getWriteQueueNums() : clientDefaultTopicQueueNums;
@@ -194,6 +199,8 @@ public class TopicConfigManager extends ConfigManager {
                             topicConfig.setPerm(perm);
                             topicConfig.setTopicSysFlag(topicSysFlag);
                             topicConfig.setTopicFilterType(defaultTopicConfig.getTopicFilterType());
+
+                            System.out.println(String.format("createTopicInSendMessageMethod() 创建新的 topicConfig [%s]", topicConfig));
                         } else {
                             log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]",
                                 defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
@@ -204,6 +211,8 @@ public class TopicConfigManager extends ConfigManager {
                     }
 
                     if (topicConfig != null) {
+                        System.out.println(String.format("创建了新的 topic[%s]  by default topic [%s], topicConfig [%s]",
+                                topic, defaultTopic, topicConfig));
                         log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]",
                             defaultTopic, topicConfig, remoteAddress);
 

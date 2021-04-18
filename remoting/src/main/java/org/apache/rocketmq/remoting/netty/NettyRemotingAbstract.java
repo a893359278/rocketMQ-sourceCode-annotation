@@ -441,6 +441,8 @@ public abstract class NettyRemotingAbstract {
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         long beginStartTime = System.currentTimeMillis();
         final int opaque = request.getOpaque();
+
+        // 异步调用前，有个信号量，每次调用都会消耗信号量
         boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
@@ -470,6 +472,8 @@ public abstract class NettyRemotingAbstract {
                 throw new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e);
             }
         } else {
+
+            // 获取信号量失败
             if (timeoutMillis <= 0) {
                 throw new RemotingTooMuchRequestException("invokeAsyncImpl invoke too fast");
             } else {
@@ -581,12 +585,14 @@ public abstract class NettyRemotingAbstract {
                                 listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
                                 break;
                             case CLOSE:
+                                System.out.println("NettyEventExecutor#run() 主动断开与 namesrv 连接");
                                 listener.onChannelClose(event.getRemoteAddr(), event.getChannel());
                                 break;
                             case CONNECT:
                                 listener.onChannelConnect(event.getRemoteAddr(), event.getChannel());
                                 break;
                             case EXCEPTION:
+                                System.out.println("NettyEventExecutor#run() broker 与 namesrv 连接发生异常，剔除 broker");
                                 listener.onChannelException(event.getRemoteAddr(), event.getChannel());
                                 break;
                             default:

@@ -274,6 +274,8 @@ public class MappedFile extends ReferenceResource {
                 int value = getReadPosition();
 
                 try {
+                    log.error("我是刷盘");
+                    // todo 刷盘！
                     //We only append data to fileChannel or mappedByteBuffer, never both.
                     if (writeBuffer != null || this.fileChannel.position() != 0) {
                         this.fileChannel.force(false);
@@ -299,8 +301,12 @@ public class MappedFile extends ReferenceResource {
             //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
             return this.wrotePosition.get();
         }
+
+        // 判断是否可刷
         if (this.isAbleToCommit(commitLeastPages)) {
+            // 持有锁
             if (this.hold()) {
+                // 将脏数据，写入到 FileChannel
                 commit0(commitLeastPages);
                 this.release();
             } else {

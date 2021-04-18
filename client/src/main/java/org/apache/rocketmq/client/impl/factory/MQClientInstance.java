@@ -610,6 +610,10 @@ public class MQClientInstance {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     TopicRouteData topicRouteData;
+                    /**
+                     * todo
+                     * broker autoCreateTopicEnable = true，且 topic 不存在，会走这段代码
+                     */
                     if (isDefault && defaultMQProducer != null) {
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(defaultMQProducer.getCreateTopicKey(),
                             1000 * 3);
@@ -621,8 +625,11 @@ public class MQClientInstance {
                             }
                         }
                     } else {
+                        // todo 向 namesrv 查找 topic 信息
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
                     }
+
+                    // todo 准备开始更新路由信息
                     if (topicRouteData != null) {
                         TopicRouteData old = this.topicRouteTable.get(topic);
                         boolean changed = topicRouteDataIsChange(old, topicRouteData);

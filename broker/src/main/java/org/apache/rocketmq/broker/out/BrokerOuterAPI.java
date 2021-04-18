@@ -142,6 +142,8 @@ public class BrokerOuterAPI {
             final int bodyCrc32 = UtilAll.crc32(body);
             requestHeader.setBodyCrc32(bodyCrc32);
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
+
+            //todo 遍历所有 namesrv 向所有 namesrv 注册
             for (final String namesrvAddr : nameServerAddressList) {
                 brokerOuterExecutor.execute(new Runnable() {
                     @Override
@@ -179,9 +181,12 @@ public class BrokerOuterAPI {
         final byte[] body
     ) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
         InterruptedException {
+
+        //todo code REGISTER_BROKER
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
         request.setBody(body);
 
+        // todo broker 在向 namesrv 发送注册信息的时候，该值传递的是 false
         if (oneway) {
             try {
                 this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
@@ -191,6 +196,7 @@ public class BrokerOuterAPI {
             return null;
         }
 
+        // todo 同步发送
         RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
         assert response != null;
         switch (response.getCode()) {

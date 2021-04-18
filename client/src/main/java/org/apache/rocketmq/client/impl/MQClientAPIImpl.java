@@ -457,10 +457,13 @@ public class MQClientAPIImpl {
                 request = RemotingCommand.createRequestCommand(RequestCode.SEND_REPLY_MESSAGE, requestHeader);
             }
         } else {
+            // todo 批量发送请求头
             if (sendSmartMsg || msg instanceof MessageBatch) {
                 SendMessageRequestHeaderV2 requestHeaderV2 = SendMessageRequestHeaderV2.createSendMessageRequestHeaderV2(requestHeader);
                 request = RemotingCommand.createRequestCommand(msg instanceof MessageBatch ? RequestCode.SEND_BATCH_MESSAGE : RequestCode.SEND_MESSAGE_V2, requestHeaderV2);
             } else {
+
+                // todo 同步发送请求头
                 request = RemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, requestHeader);
             }
         }
@@ -484,6 +487,7 @@ public class MQClientAPIImpl {
                 if (timeoutMillis < costTimeSync) {
                     throw new RemotingTooMuchRequestException("sendMessage call timeout");
                 }
+                // todo 同步等待返回
                 return this.sendMessageSync(addr, brokerName, msg, timeoutMillis - costTimeSync, request);
             default:
                 assert false;
@@ -523,6 +527,8 @@ public class MQClientAPIImpl {
             @Override
             public void operationComplete(ResponseFuture responseFuture) {
                 RemotingCommand response = responseFuture.getResponseCommand();
+
+                // todo 发送失败
                 if (null == sendCallback && response != null) {
 
                     try {
@@ -1361,16 +1367,21 @@ public class MQClientAPIImpl {
 
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
+
+        // todo 构造请求头
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
 
+        // todo 查找 topic 信息 RequestCode.GET_ROUTEINTO_BY_TOPIC
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ROUTEINTO_BY_TOPIC, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.TOPIC_NOT_EXIST: {
+                // todo 允许不存在，且主题不等于默认主题 TBW102
                 if (allowTopicNotExist && !topic.equals(MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
+                    System.out.println(String.format("getTopicRouteInfoFromNameServer() topic[%s] 不存在, 并且允许自动创建 topic", topic));
                     log.warn("get Topic [{}] RouteInfoFromNameServer is not exist value", topic);
                 }
 
@@ -1379,6 +1390,7 @@ public class MQClientAPIImpl {
             case ResponseCode.SUCCESS: {
                 byte[] body = response.getBody();
                 if (body != null) {
+                    System.out.println(String.format("getTopicRouteInfoFromNameServer() 获取到对应的 topic[%s] 的路由元信息", topic));
                     return TopicRouteData.decode(body, TopicRouteData.class);
                 }
             }

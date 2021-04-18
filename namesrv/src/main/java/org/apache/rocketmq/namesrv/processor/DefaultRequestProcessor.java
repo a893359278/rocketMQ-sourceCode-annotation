@@ -88,8 +88,10 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             case RequestCode.QUERY_DATA_VERSION:
                 return queryBrokerTopicConfig(ctx, request);
             case RequestCode.REGISTER_BROKER:
+                // broker 注册
                 Version brokerVersion = MQVersion.value2Version(request.getVersion());
                 if (brokerVersion.ordinal() >= MQVersion.Version.V3_0_11.ordinal()) {
+                    // todo 3.0.11 版本之后走这个方法
                     return this.registerBrokerWithFilterServer(ctx, request);
                 } else {
                     return this.registerBroker(ctx, request);
@@ -97,6 +99,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             case RequestCode.UNREGISTER_BROKER:
                 return this.unregisterBroker(ctx, request);
             case RequestCode.GET_ROUTEINTO_BY_TOPIC:
+                // todo 获取 topic 的路由信息
                 return this.getRouteInfoByTopic(ctx, request);
             case RequestCode.GET_BROKER_CLUSTER_INFO:
                 return this.getBrokerClusterInfo(ctx, request);
@@ -340,6 +343,9 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         final GetRouteInfoRequestHeader requestHeader =
             (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
 
+        // todo 客户端发送消息前，都会去获取对应 topic 的信息
+        System.out.println("getRouteInfoByTopic() 获取 getRouteInfoByTopic");
+        // todo 开始获取 topic 路由元信息
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
 
         if (topicRouteData != null) {

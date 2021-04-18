@@ -155,6 +155,8 @@ public class KVConfigManager {
         try {
             this.lock.readLock().lockInterruptibly();
             try {
+                // todo
+                System.out.println("获取 kv config namespace[%s], key[%s]".format(namespace, key));
                 HashMap<String, String> kvTable = this.configTable.get(namespace);
                 if (null != kvTable) {
                     return kvTable.get(key);

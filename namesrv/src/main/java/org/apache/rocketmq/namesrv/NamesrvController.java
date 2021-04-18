@@ -84,6 +84,7 @@ public class NamesrvController {
 
         this.registerProcessor();
 
+        // 延迟 5 秒，每隔 10 秒，扫描过期的 broker
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override

@@ -164,6 +164,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         log.info("consumeMessageDirectly receive new message: {}", msg);
 
         try {
+            System.out.println("111");
             ConsumeConcurrentlyStatus status = this.messageListener.consumeMessage(msgs, context);
             if (status != null) {
                 switch (status) {

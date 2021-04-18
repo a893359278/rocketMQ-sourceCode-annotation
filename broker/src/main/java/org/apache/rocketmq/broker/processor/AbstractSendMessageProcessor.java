@@ -179,6 +179,8 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         TopicConfig topicConfig =
             this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {
+            // todo 新的 topic
+            System.out.println(String.format("msgCheck 这是一个新的 topic [%s]", requestHeader.getTopic()));
             int topicSysFlag = 0;
             if (requestHeader.isUnitMode()) {
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
@@ -189,14 +191,18 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             }
 
             log.warn("the topic {} not exist, producer: {}", requestHeader.getTopic(), ctx.channel().remoteAddress());
+            // todo 创建 topic
             topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageMethod(
                 requestHeader.getTopic(),
                 requestHeader.getDefaultTopic(),
                 RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
                 requestHeader.getDefaultTopicQueueNums(), topicSysFlag);
+            System.out.println(String.format("创建完后的 topicConfig [%s]", topicConfig.toString()));
 
             if (null == topicConfig) {
+                // todo 重试 topic
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    // todo 重试 topic 是一个特殊的 topic， 只会有 1 个队列
                     topicConfig =
                         this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
                             requestHeader.getTopic(), 1, PermName.PERM_WRITE | PermName.PERM_READ,
