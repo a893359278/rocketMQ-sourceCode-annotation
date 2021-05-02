@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.client.impl.producer;
 
+import com.alibaba.fastjson.JSON;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -556,6 +557,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         // todo  到 namesrv 查找 topic
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
+        System.out.println("获取的 队列数据 " + JSON.toJSONString(topicPublishInfo));
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             boolean callTimeout = false;
             MessageQueue mq = null;

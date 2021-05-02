@@ -35,7 +35,7 @@ public class Producer {
         /*
          * Instantiate with a producer group name.
          */
-        DefaultMQProducer producer = new DefaultMQProducer("test", "please_rename_unique_group_name");
+        DefaultMQProducer producer = new DefaultMQProducer("TBW102", "please_rename_unique_group_name");
         producer.setNamesrvAddr("localhost:9876");
         CountDownLatch count = new CountDownLatch(1);
         /*
@@ -54,7 +54,7 @@ public class Producer {
          */
         producer.start();
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10; i++) {
             try {
 
                 /*

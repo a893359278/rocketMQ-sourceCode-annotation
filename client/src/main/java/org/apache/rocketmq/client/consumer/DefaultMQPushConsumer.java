@@ -690,6 +690,8 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     @Override
     public void start() throws MQClientException {
         setConsumerGroup(NamespaceUtil.wrapNamespace(this.getNamespace(), this.consumerGroup));
+
+        // todo 消费端启动
         this.defaultMQPushConsumerImpl.start();
         if (null != traceDispatcher) {
             try {

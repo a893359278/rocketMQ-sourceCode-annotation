@@ -458,7 +458,9 @@ public class MQClientAPIImpl {
             }
         } else {
             // todo 批量发送请求头
+            // todo 正常会走到这个 if 语句来
             if (sendSmartMsg || msg instanceof MessageBatch) {
+                // todo, 使用特殊字符，表示特殊字段，压缩发送的内容
                 SendMessageRequestHeaderV2 requestHeaderV2 = SendMessageRequestHeaderV2.createSendMessageRequestHeaderV2(requestHeader);
                 request = RemotingCommand.createRequestCommand(msg instanceof MessageBatch ? RequestCode.SEND_BATCH_MESSAGE : RequestCode.SEND_MESSAGE_V2, requestHeaderV2);
             } else {

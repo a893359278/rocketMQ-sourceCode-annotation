@@ -86,6 +86,11 @@
         <appender-ref ref="RocketmqBrokerAppender"/>
     </logger>
 
+    <logger name="RocketMQConsumerStdout" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <root>
         <level value="INFO"/>
         <appender-ref ref="DefaultAppender"/>

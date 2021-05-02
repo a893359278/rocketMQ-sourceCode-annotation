@@ -164,7 +164,6 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         log.info("consumeMessageDirectly receive new message: {}", msg);
 
         try {
-            System.out.println("111");
             ConsumeConcurrentlyStatus status = this.messageListener.consumeMessage(msgs, context);
             if (status != null) {
                 switch (status) {
@@ -357,6 +356,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }, 5000, TimeUnit.MILLISECONDS);
     }
 
+    // 真正拉取消息的类
     class ConsumeRequest implements Runnable {
         private final List<MessageExt> msgs;
         private final ProcessQueue processQueue;

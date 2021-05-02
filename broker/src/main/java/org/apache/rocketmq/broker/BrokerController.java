@@ -344,6 +344,7 @@ public class BrokerController {
                 }
             }, initialDelay, period, TimeUnit.MILLISECONDS);
 
+            // todo 每隔 10s 定时持久化消费偏移文件
             this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
@@ -1136,16 +1137,20 @@ public class BrokerController {
         return accessValidatorMap;
     }
 
+    // todo 主从信息同步
     private void handleSlaveSynchronize(BrokerRole role) {
         if (role == BrokerRole.SLAVE) {
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
             this.slaveSynchronize.setMasterAddr(null);
+
+            // todo 每隔 10s 进行一次主从信息同步
             slaveSyncFuture = this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     try {
+                        // todo 主从同步
                         BrokerController.this.slaveSynchronize.syncAll();
                     }
                     catch (Throwable e) {

@@ -344,7 +344,6 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
 
         // todo 客户端发送消息前，都会去获取对应 topic 的信息
-        System.out.println("getRouteInfoByTopic() 获取 getRouteInfoByTopic");
         // todo 开始获取 topic 路由元信息
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
 

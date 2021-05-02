@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.namesrv.routeinfo;
 
+import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +48,7 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
 
 public class RouteInfoManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+    private static final InternalLogger stdout = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
     private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
@@ -174,6 +176,10 @@ public class RouteInfoManager {
                     }
                 }
 
+                /**
+                 * todo 如果不是 master，那么会结果集 中会返回 master 的地址.
+                 * 这里的 HAServer 个人认为，就是 broker master 的地址。
+                 */
                 if (MixAll.MASTER_ID != brokerId) {
                     String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
                     if (masterAddr != null) {
@@ -184,6 +190,11 @@ public class RouteInfoManager {
                         }
                     }
                 }
+
+                stdout.info("broker 注册信息的 topic 信息 [{}]", JSON.toJSONString(topicQueueTable));
+                stdout.info("broker data [{}]", JSON.toJSONString(brokerAddrTable));
+                stdout.info("brokerLiveInfo [{}]", JSON.toJSONString(brokerLiveTable));
+
             } finally {
                 this.lock.writeLock().unlock();
             }
@@ -411,6 +422,7 @@ public class RouteInfoManager {
                         }
                     }
                 }
+                stdout.info("拉取 topic {}, 队列数据 {}, broker数据 {}", topic, JSON.toJSONString(queueDataList), JSON.toJSONString(brokerAddrTable));
             } finally {
                 this.lock.readLock().unlock();
             }

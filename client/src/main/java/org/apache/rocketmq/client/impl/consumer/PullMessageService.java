@@ -56,6 +56,8 @@ public class PullMessageService extends ServiceThread {
         }
     }
 
+    // todo 将拉取消息请求放入队列，放入队列后
+    // todo 会有其他的线程消费此前 拉取请求
     public void executePullRequestImmediately(final PullRequest pullRequest) {
         try {
             this.pullRequestQueue.put(pullRequest);
@@ -80,7 +82,6 @@ public class PullMessageService extends ServiceThread {
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
         if (consumer != null) {
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
-            log.error("开始拉消息");
             impl.pullMessage(pullRequest);
         } else {
             log.warn("No matched consumer for the PullRequest {}, drop it", pullRequest);

@@ -31,6 +31,17 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 
+/**
+ * RocketMQ 协议
+ *
+ * 构建消息协议，无法包含以下几个内容
+ * 1. 魔术
+ * 2. 版本
+ * 3. 序列化协议
+ * 4. 指定请求类型：如心跳，注册
+ * 5. 正文长度
+ * 6. 正文
+ */
 public class RemotingCommand {
     public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
     public static final String SERIALIZE_TYPE_ENV = "ROCKETMQ_SERIALIZE_TYPE";

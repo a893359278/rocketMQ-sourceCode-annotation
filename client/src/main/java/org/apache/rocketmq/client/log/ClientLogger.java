@@ -101,6 +101,10 @@ public class ClientLogger {
         return CLIENT_LOGGER;
     }
 
+    public static InternalLogger getStdLog() {
+        return InternalLoggerFactory.getLogger("RocketMQConsumerStdout");
+    }
+
     static class AppenderProxy extends Appender {
         private Appender proxy;
 

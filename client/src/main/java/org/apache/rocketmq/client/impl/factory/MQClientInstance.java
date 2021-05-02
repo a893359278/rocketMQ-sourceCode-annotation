@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.client.impl.factory;
 
+import com.alibaba.fastjson.JSON;
 import java.io.UnsupportedEncodingException;
 import java.net.DatagramSocket;
 import java.util.Collections;
@@ -88,6 +89,8 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 public class MQClientInstance {
     private final static long LOCK_TIMEOUT_MILLIS = 3000;
     private final InternalLogger log = ClientLogger.getLog();
+    private final InternalLogger stdlog = ClientLogger.getStdLog();
+
     private final ClientConfig clientConfig;
     private final int instanceIndex;
     private final String clientId;
@@ -299,6 +302,7 @@ public class MQClientInstance {
             @Override
             public void run() {
                 try {
+                    // todo 持久化消费偏移
                     MQClientInstance.this.persistAllConsumerOffset();
                 } catch (Exception e) {
                     log.error("ScheduledTask persistAllConsumerOffset exception", e);
@@ -615,6 +619,8 @@ public class MQClientInstance {
                      * broker autoCreateTopicEnable = true，且 topic 不存在，会走这段代码
                      */
                     if (isDefault && defaultMQProducer != null) {
+
+                        // todo 从 namesrv 获取 topic 对应的信息
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(defaultMQProducer.getCreateTopicKey(),
                             1000 * 3);
                         if (topicRouteData != null) {
@@ -627,6 +633,7 @@ public class MQClientInstance {
                     } else {
                         // todo 向 namesrv 查找 topic 信息
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
+                        System.out.println("从 namesrv 获取到的队列数据为 " + JSON.toJSONString(topicRouteData));
                     }
 
                     // todo 准备开始更新路由信息
@@ -668,6 +675,7 @@ public class MQClientInstance {
                                     Entry<String, MQConsumerInner> entry = it.next();
                                     MQConsumerInner impl = entry.getValue();
                                     if (impl != null) {
+                                        // todo 往消费者中放 队列信息
                                         impl.updateTopicSubscribeInfo(topic, subscribeInfo);
                                     }
                                 }
