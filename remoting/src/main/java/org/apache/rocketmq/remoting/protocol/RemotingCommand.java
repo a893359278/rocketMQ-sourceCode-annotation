@@ -411,6 +411,7 @@ public class RemotingCommand {
         return encodeHeader(this.body != null ? this.body.length : 0);
     }
 
+    // todo netty 会调用该方法，对消息进行编码
     public ByteBuffer encodeHeader(final int bodyLength) {
         // 1> header length size
         int length = 4;

@@ -530,7 +530,7 @@ public class MQClientAPIImpl {
             public void operationComplete(ResponseFuture responseFuture) {
                 RemotingCommand response = responseFuture.getResponseCommand();
 
-                // todo 发送失败
+                // todo 没有设置回调
                 if (null == sendCallback && response != null) {
 
                     try {
@@ -563,6 +563,8 @@ public class MQClientAPIImpl {
                         producer.updateFaultItem(brokerName, System.currentTimeMillis() - responseFuture.getBeginTimestamp(), false);
                     } catch (Exception e) {
                         producer.updateFaultItem(brokerName, System.currentTimeMillis() - responseFuture.getBeginTimestamp(), true);
+
+                        // todo 出现异常，该方法会再次调用消息发送
                         onExceptionImpl(brokerName, msg, 0L, request, sendCallback, topicPublishInfo, instance,
                             retryTimesWhenSendFailed, times, e, context, false, producer);
                     }
@@ -613,6 +615,7 @@ public class MQClientAPIImpl {
                 retryBrokerName);
             try {
                 request.setOpaque(RemotingCommand.createNewRequestId());
+                // todo 消息发送重试
                 sendMessageAsync(addr, retryBrokerName, msg, timeoutMillis, request, sendCallback, topicPublishInfo, instance,
                     timesTotal, curTimes, context, producer);
             } catch (InterruptedException e1) {

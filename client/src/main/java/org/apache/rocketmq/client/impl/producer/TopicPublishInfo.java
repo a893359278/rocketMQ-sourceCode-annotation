@@ -68,8 +68,11 @@ public class TopicPublishInfo {
 
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
         if (lastBrokerName == null) {
+            // todo 大部分情况走该函数
             return selectOneMessageQueue();
         } else {
+            System.out.println("broker 出现问题 " + lastBrokerName);
+            // todo 发送出现问题了，选择另外的 broker 进行发送
             int index = this.sendWhichQueue.getAndIncrement();
             for (int i = 0; i < this.messageQueueList.size(); i++) {
                 int pos = Math.abs(index++) % this.messageQueueList.size();
@@ -77,6 +80,7 @@ public class TopicPublishInfo {
                     pos = 0;
                 MessageQueue mq = this.messageQueueList.get(pos);
                 if (!mq.getBrokerName().equals(lastBrokerName)) {
+                    System.out.println("producer 选择了不同的 broker 发送");
                     return mq;
                 }
             }

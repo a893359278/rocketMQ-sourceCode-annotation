@@ -442,7 +442,7 @@ public abstract class NettyRemotingAbstract {
         long beginStartTime = System.currentTimeMillis();
         final int opaque = request.getOpaque();
 
-        // 异步调用前，有个信号量，每次调用都会消耗信号量
+        // todo 异步调用前，有个信号量，每次调用都会消耗信号量
         boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
