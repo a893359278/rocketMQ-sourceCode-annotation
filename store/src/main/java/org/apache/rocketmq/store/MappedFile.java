@@ -48,8 +48,12 @@ public class MappedFile extends ReferenceResource {
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
+
+    // todo 消息写入偏移
     protected final AtomicInteger wrotePosition = new AtomicInteger(0);
+    // todo 消息提交偏移
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
+    // todo 消息刷盘偏移
     private final AtomicInteger flushedPosition = new AtomicInteger(0);
     protected int fileSize;
     protected FileChannel fileChannel;
@@ -333,6 +337,8 @@ public class MappedFile extends ReferenceResource {
                 byteBuffer.position(lastCommittedPosition);
                 byteBuffer.limit(writePos);
                 this.fileChannel.position(lastCommittedPosition);
+                // 仅仅将数据写入通道，什么时候刷盘，这个是由操作系统决定；
+                // 如果要直接刷盘，需要调用 force()
                 this.fileChannel.write(byteBuffer);
                 this.committedPosition.set(writePos);
             } catch (Throwable e) {
@@ -581,5 +587,19 @@ public class MappedFile extends ReferenceResource {
     @Override
     public String toString() {
         return this.fileName;
+    }
+
+
+    public static void main(String[] args) {
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        buffer.putInt(1);
+        buffer.putInt(2);
+        buffer.putInt(3);
+        buffer.putInt(4);
+//        buffer.flip();
+
+        ByteBuffer slice = buffer.slice();
+        int anInt = slice.getInt();
+        System.out.println(anInt);
     }
 }

@@ -27,13 +27,17 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 
+// todo 检查点
 public class StoreCheckpoint {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final RandomAccessFile randomAccessFile;
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
+    // todo commitlog 最后一次刷盘时间
     private volatile long physicMsgTimestamp = 0;
+    // todo consumeQueue 最后一次刷盘时间
     private volatile long logicsMsgTimestamp = 0;
+    // todo indexFile 最后一次刷盘时间
     private volatile long indexMsgTimestamp = 0;
 
     public StoreCheckpoint(final String scpPath) throws IOException {

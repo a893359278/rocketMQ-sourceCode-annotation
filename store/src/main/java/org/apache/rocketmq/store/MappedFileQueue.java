@@ -302,6 +302,7 @@ public class MappedFileQueue {
     public long getMaxOffset() {
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {
+            // todo writeBuffer == null 表示 transientStorePoolEnable
             return mappedFile.getFileFromOffset() + mappedFile.getReadPosition();
         }
         return 0;
@@ -449,6 +450,7 @@ public class MappedFileQueue {
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.committedWhere;
             this.committedWhere = where;
+            System.out.println("我是不是写入了？？？ " + result);
         }
 
         return result;

@@ -426,6 +426,8 @@ public class CommitLog {
             // Looking beginning to recover from which file
             int index = mappedFiles.size() - 1;
             MappedFile mappedFile = null;
+
+            // todo 找到哪个文件是可能损坏的
             for (; index >= 0; index--) {
                 mappedFile = mappedFiles.get(index);
                 if (this.isMappedFileMatchedRecover(mappedFile)) {
@@ -478,6 +480,7 @@ public class CommitLog {
                         }
                     }
                 } else {
+                    // TODO 遇到不完整的消息，直接 break
                     log.info("recover physics file end, " + mappedFile.getFileName() + " pos=" + byteBuffer.position());
                     break;
                 }
@@ -698,8 +701,10 @@ public class CommitLog {
         else {
             System.out.println("??  难道我是异步刷盘？？");
             if (!this.defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
+                // transientStorePoolEnable 关闭
                 flushCommitLogService.wakeup();
             } else {
+                // transientStorePoolEnable 开启
                 commitLogService.wakeup();
             }
         }
@@ -974,9 +979,12 @@ public class CommitLog {
                 // 每次刷盘，至少有多少页数据。1 页 正常 = 4kb
                 int commitDataLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogLeastPages();
 
+                // 200ms 内还未发生写入，那么不需要等待有 4页，才写入
                 int commitDataThoroughInterval =
                     CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogThoroughInterval();
 
+                // 1. 避免频繁刷盘
+                // 2. 尽量
                 long begin = System.currentTimeMillis();
                 if (begin >= (this.lastCommitTimestamp + commitDataThoroughInterval)) {
                     this.lastCommitTimestamp = begin;
@@ -1036,10 +1044,10 @@ public class CommitLog {
 
                 // todo 默认每隔 500ms 刷盘
                 int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushIntervalCommitLog();
-                // todo 每次刷盘至少多少页
+                // todo 每次刷盘至少多少页, 默认4
                 int flushPhysicQueueLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogLeastPages();
 
-                // todo 2次刷盘任务 最大间隔
+                // todo 2次刷盘任务 最大间隔， 10s
                 int flushPhysicQueueThoroughInterval =
                     CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogThoroughInterval();
 
@@ -1075,6 +1083,7 @@ public class CommitLog {
                     //todo 刷盘完毕后，更新检测点 commitlog 文件的更新时间戳
                     long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
                     if (storeTimestamp > 0) {
+                        // commitLog 检查点
                         CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
                     }
                     long past = System.currentTimeMillis() - begin;
@@ -1279,7 +1288,7 @@ public class CommitLog {
             // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
             // PHY OFFSET
-            long wroteOffset = fileFromOffset + byteBuffer.position();
+             long wroteOffset = fileFromOffset + byteBuffer.position();
 
             int sysflag = msgInner.getSysFlag();
 
@@ -1341,6 +1350,7 @@ public class CommitLog {
 
             final int bodyLength = msgInner.getBody() == null ? 0 : msgInner.getBody().length;
 
+            // 计算消息长度
             final int msgLen = calMsgLength(msgInner.getSysFlag(), bodyLength, topicLength, propertiesLength);
 
             // Exceeds the maximum message

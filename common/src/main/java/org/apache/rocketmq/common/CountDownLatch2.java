@@ -19,6 +19,7 @@ package org.apache.rocketmq.common;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Add reset feature for @see java.util.concurrent.CountDownLatch
@@ -191,5 +192,73 @@ public class CountDownLatch2 {
         protected void reset() {
             setState(startCount);
         }
+    }
+
+    private static  Object o1 = new Object();
+    private static  Object o2 = new Object();
+
+    public static void main(String[] args) throws InterruptedException {
+
+
+        final CountDownLatch2 count = new CountDownLatch2(2);
+        count.countDown();
+        count.countDown();
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    synchronized (o1) {
+                        Object tmp = o1;
+                        o1 = o2;
+                        o2 = tmp;
+                        System.out.println(111);
+                        Thread.sleep(10000L);
+                        System.out.println("结束水黾");
+                    }
+                } catch (Exception e) {
+                    System.out.println(1);
+                }
+            }
+        });
+        t.start();
+
+        Thread.sleep(1000L);
+        System.out.println(111);
+        synchronized (o2) {
+            System.out.println(111);
+        }
+
+//        Thread t2 = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    synchronized (o2) {
+//                        System.out.println(222);
+//                        Thread.sleep(3000L);
+//                    }
+//                } catch (Exception e) {
+//                    System.out.println(1);
+//                }
+//            }
+//        });
+//
+//        Thread t2 = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    count.await();
+//                    System.out.println(222);
+//                } catch (Exception e) {
+//                    System.out.println(1);
+//                }
+//            }
+//        });
+
+
+//        t2.start();
+
+
+        Thread.sleep(1090000000L);
+
     }
 }

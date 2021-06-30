@@ -45,9 +45,11 @@ public class TransientStorePool {
 
     /**
      * It's a heavy init method.
+     * todo 根据配置，将池子填充满
      */
     public void init() {
         for (int i = 0; i < poolSize; i++) {
+            // 堆外内存
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(fileSize);
 
             final long address = ((DirectBuffer) byteBuffer).address();

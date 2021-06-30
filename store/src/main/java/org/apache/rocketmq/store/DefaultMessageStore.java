@@ -177,6 +177,7 @@ public class DefaultMessageStore implements MessageStore {
         boolean result = true;
 
         try {
+            //todo 如果 abort 文件存在，则表示，当前是非正常退出
             boolean lastExitOK = !this.isTempFileExist();
             log.info("last shutdown {}", lastExitOK ? "normally" : "abnormally");
 
@@ -196,6 +197,7 @@ public class DefaultMessageStore implements MessageStore {
 
                 this.indexService.load(lastExitOK);
 
+                // todo 根据是否正常退出，恢复 CommitLog
                 this.recover(lastExitOK);
 
                 log.info("load over, and the max phy offset = {}", this.getMaxPhyOffset());
@@ -256,6 +258,8 @@ public class DefaultMessageStore implements MessageStore {
             }
             log.info("[SetReputOffset] maxPhysicalPosInLogicQueue={} clMinOffset={} clMaxOffset={} clConfirmedOffset={}",
                 maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
+
+            // TODO 计算好，需要重放的偏移量。
             this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
             this.reputMessageService.start();
 
@@ -1328,8 +1332,12 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private void recover(final boolean lastExitOK) {
+        // todo 先恢复 consumeQueue, 获取 consumeQueue 中存储的 commitlog 最大的偏移量
         long maxPhyOffsetOfConsumeQueue = this.recoverConsumeQueue();
 
+        // todo 不正常退出和正常退出的恢复区别为：
+        // todo 不正常退出，会根据 maxPhyOffsetOfConsumeQueue 找到应该从哪个文件开始恢复
+        // todo 正常退出，则直接从后 3 个文件开始恢复
         if (lastExitOK) {
             this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);
         } else {
@@ -1358,6 +1366,10 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    /**
+     * 恢复 consumeQueue，返回 commitLog 最多可以恢复到哪里
+     * @return
+     */
     private long recoverConsumeQueue() {
         long maxPhysicOffset = -1;
         for (ConcurrentMap<Integer, ConsumeQueue> maps : this.consumeQueueTable.values()) {
@@ -1831,11 +1843,12 @@ public class DefaultMessageStore implements MessageStore {
                 }
 
                 SelectMappedBufferResult result = DefaultMessageStore.this.commitLog.getData(reputFromOffset);
-                if (result != null) {
+                    if (result != null) {
                     try {
                         this.reputFromOffset = result.getStartOffset();
 
                         for (int readSize = 0; readSize < result.getSize() && doNext; ) {
+                            // todo 将消息从内存中读出来，然后解析成实体类
                             DispatchRequest dispatchRequest =
                                 DefaultMessageStore.this.commitLog.checkMessageAndReturnSize(result.getByteBuffer(), false, false);
                             int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();

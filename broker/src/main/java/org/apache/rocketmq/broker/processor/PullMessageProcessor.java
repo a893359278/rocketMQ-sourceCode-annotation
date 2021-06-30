@@ -261,6 +261,8 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                     break;
             }
 
+            // todo 如果 slave 是从，并且是可读，当 master 是 busy 的时候，返回 slave 的信息
+            // todo 这里 busy 的定义是：master
             if (this.brokerController.getBrokerConfig().isSlaveReadEnable()) {
                 // consume too slow ,redirect to another machine
                 if (getMessageResult.isSuggestPullingFromSlave()) {
