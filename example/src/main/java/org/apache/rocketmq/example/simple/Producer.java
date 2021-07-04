@@ -32,9 +32,10 @@ public class Producer {
         for (int i = 0; i < 1; i++)
             try {
                 {
+                    // 有多个 key， 可以用 空格 隔开
                     Message msg = new Message("TopicTest",
                         "TagA",
-                        "OrderID188",
+                        "OrderID188 asdwe",
                         "Hello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
                     SendResult sendResult = producer.send(msg);
                 }

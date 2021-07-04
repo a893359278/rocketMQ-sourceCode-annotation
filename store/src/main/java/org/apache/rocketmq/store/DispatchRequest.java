@@ -25,9 +25,12 @@ public class DispatchRequest {
     private int msgSize;
     private final long tagsCode;
     private final long storeTimestamp;
+    // todo 此次要转发的消息队列的偏移
     private final long consumeQueueOffset;
     private final String keys;
     private final boolean success;
+
+    // TODO 客户端 写入的值
     private final String uniqKey;
 
     private final int sysFlag;

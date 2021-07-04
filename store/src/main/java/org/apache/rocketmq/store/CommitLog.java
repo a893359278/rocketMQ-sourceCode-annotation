@@ -59,6 +59,8 @@ public class CommitLog {
 
     private final AppendMessageCallback appendMessageCallback;
     private final ThreadLocal<MessageExtBatchEncoder> batchEncoderThreadLocal;
+    // todo DefaultMessageStore 在 start() 方法会对 通过 ConsumeQueue 填充该值
+    // todo offset 里面的值，在 commmitlog 被写入内存的时候，会加 + 1
     protected HashMap<String/* topic-queueid */, Long/* offset */> topicQueueTable = new HashMap<String, Long>(1024);
     protected volatile long confirmOffset = -1L;
 
@@ -264,6 +266,7 @@ public class CommitLog {
 
             int flag = byteBuffer.getInt();
 
+            // todo 拿到队列偏移
             long queueOffset = byteBuffer.getLong();
 
             long physicOffset = byteBuffer.getLong();
@@ -326,6 +329,7 @@ public class CommitLog {
 
                 keys = propertiesMap.get(MessageConst.PROPERTY_KEYS);
 
+                // TODO uniqKey 是客户端生成的 全局唯一的 key
                 uniqKey = propertiesMap.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
 
                 String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
@@ -1300,6 +1304,7 @@ public class CommitLog {
             this.resetByteBuffer(storeHostHolder, storeHostLength);
             String msgId;
             if ((sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0) {
+                // TODO msgId 包含了 消息的偏移。
                 msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(storeHostHolder), wroteOffset);
             } else {
                 msgId = MessageDecoder.createMessageId(this.msgIdV6Memory, msgInner.getStoreHostBytes(storeHostHolder), wroteOffset);

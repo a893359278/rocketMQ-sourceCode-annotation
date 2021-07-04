@@ -40,7 +40,9 @@ public class IndexService {
      */
     private static final int MAX_TRY_IDX_CREATE = 3;
     private final DefaultMessageStore defaultMessageStore;
+    // todo 默认 500W 个 hashSlot ;maxHashSlotNum 可配置
     private final int hashSlotNum;
+    // todo 默认 2000W 个 Index Item; maxIndexNum 可配置
     private final int indexNum;
     private final String storePath;
     private final ArrayList<IndexFile> indexFileList = new ArrayList<IndexFile>();
@@ -199,6 +201,7 @@ public class IndexService {
     }
 
     public void buildIndex(DispatchRequest req) {
+        //todo 有则获取，无则更新
         IndexFile indexFile = retryGetAndCreateIndexFile();
         if (indexFile != null) {
             long endPhyOffset = indexFile.getEndPhyOffset();
@@ -219,14 +222,17 @@ public class IndexService {
                     return;
             }
 
+            // TODO uniqKey 不为 null, 则表示，为 单条消息
             if (req.getUniqKey() != null) {
-                indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
+                // TODO 写入内存
+                indexFile = putKey(indexFile, msg, /* topic + key */buildKey(topic, req.getUniqKey()));
                 if (indexFile == null) {
                     log.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
                     return;
                 }
             }
 
+            // TODO 对 key 拆分，将 key 写入 IndexFile
             if (keys != null && keys.length() > 0) {
                 String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
                 for (int i = 0; i < keyset.length; i++) {
@@ -311,6 +317,7 @@ public class IndexService {
             this.readWriteLock.readLock().unlock();
         }
 
+        // todo 创建新的 IndexFile
         if (indexFile == null) {
             try {
                 String fileName =

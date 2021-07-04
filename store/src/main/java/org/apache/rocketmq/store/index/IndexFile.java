@@ -32,7 +32,9 @@ public class IndexFile {
     private static int hashSlotSize = 4;
     private static int indexSize = 20;
     private static int invalidIndex = 0;
+    // TODO 默认 500W
     private final int hashSlotNum;
+    // TODO 默认 2000W
     private final int indexNum;
     private final MappedFile mappedFile;
     private final FileChannel fileChannel;
@@ -90,9 +92,13 @@ public class IndexFile {
     }
 
     public boolean putKey(final String key, final long phyOffset, final long storeTimestamp) {
+        // TODO IndexFile 未写满
         if (this.indexHeader.getIndexCount() < this.indexNum) {
+            // TODO 求 hash 值。 Math.abs(key)
             int keyHash = indexKeyHashMethod(key);
+            // TODO 算出 hash 落在哪个槽位
             int slotPos = keyHash % this.hashSlotNum;
+            // TODO 算出该 key 在 IndexFile 中的位置
             int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
 
             FileLock fileLock = null;
@@ -101,13 +107,16 @@ public class IndexFile {
 
                 // fileLock = this.fileChannel.lock(absSlotPos, hashSlotSize,
                 // false);
+                // TODO 拿到原来在这个 hash 槽的 元素，如果不存在，一定为 0
                 int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
                 if (slotValue <= invalidIndex || slotValue > this.indexHeader.getIndexCount()) {
                     slotValue = invalidIndex;
                 }
 
+                // TODO 求与 IndexFile 第一条 item 的存储时间差
                 long timeDiff = storeTimestamp - this.indexHeader.getBeginTimestamp();
 
+                // TODO 毫秒级 转 秒级
                 timeDiff = timeDiff / 1000;
 
                 if (this.indexHeader.getBeginTimestamp() <= 0) {
@@ -118,22 +127,27 @@ public class IndexFile {
                     timeDiff = 0;
                 }
 
+                // TODO 求 index item 写入位置
                 int absIndexPos =
                     IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                         + this.indexHeader.getIndexCount() * indexSize;
 
+                // TODO 写入 index item
                 this.mappedByteBuffer.putInt(absIndexPos, keyHash);
                 this.mappedByteBuffer.putLong(absIndexPos + 4, phyOffset);
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8, (int) timeDiff);
                 this.mappedByteBuffer.putInt(absIndexPos + 4 + 8 + 4, slotValue);
 
+                // TODO 该槽上，存放的是 Index item 中的 第几个元素。
                 this.mappedByteBuffer.putInt(absSlotPos, this.indexHeader.getIndexCount());
 
+                // TODO 放入的是第1个
                 if (this.indexHeader.getIndexCount() <= 1) {
                     this.indexHeader.setBeginPhyOffset(phyOffset);
                     this.indexHeader.setBeginTimestamp(storeTimestamp);
                 }
 
+                // 更新 Index Head 信息
                 this.indexHeader.incHashSlotCount();
                 this.indexHeader.incIndexCount();
                 this.indexHeader.setEndPhyOffset(phyOffset);
