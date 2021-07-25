@@ -43,6 +43,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     private final static InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String groupName;
+    // todo 记录每个消息队列的 拉取偏移偏移
     private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =
         new ConcurrentHashMap<MessageQueue, AtomicLong>();
 

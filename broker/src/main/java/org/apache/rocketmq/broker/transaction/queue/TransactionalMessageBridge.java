@@ -201,6 +201,7 @@ public class TransactionalMessageBridge {
             String.valueOf(msgInner.getQueueId()));
         msgInner.setSysFlag(
             MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), MessageSysFlag.TRANSACTION_NOT_TYPE));
+        // todo RMQ_SYS_TRANS_HALF_TOPIC
         msgInner.setTopic(TransactionalMessageUtil.buildHalfTopic());
         msgInner.setQueueId(0);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
@@ -211,6 +212,7 @@ public class TransactionalMessageBridge {
         MessageQueue messageQueue = new MessageQueue(messageExt.getTopic(),
             this.brokerController.getBrokerConfig().getBrokerName(), messageExt.getQueueId());
         if (TransactionalMessageUtil.REMOVETAG.equals(opType)) {
+            // TODO 注意，消息的 body 里面放着 MessageExt#queueOffset
             return addRemoveTagInTransactionOp(messageExt, messageQueue);
         }
         return true;

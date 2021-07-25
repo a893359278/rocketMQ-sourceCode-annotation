@@ -52,6 +52,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
 
     @Override
     public void check(long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) {
+        System.out.println("\"check check!\"");
         log.warn("check check!");
     }
 

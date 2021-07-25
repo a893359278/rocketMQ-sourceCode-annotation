@@ -30,10 +30,14 @@ public class SubscriptionData implements Comparable<SubscriptionData> {
     public final static String SUB_ALL = "*";
     private boolean classFilterMode = false;
     private String topic;
+    // 表达式
     private String subString;
+    // 设置的 tag
     private Set<String> tagsSet = new HashSet<String>();
+    // tag 对应的 hashCode，因为不会在 broker 端过滤， consumer 端也要过滤
     private Set<Integer> codeSet = new HashSet<Integer>();
     private long subVersion = System.currentTimeMillis();
+    // 过滤表达式
     private String expressionType = ExpressionType.TAG;
 
     @JSONField(serialize = false)

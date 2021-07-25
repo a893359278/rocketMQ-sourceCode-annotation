@@ -576,15 +576,20 @@ public class CommitLog {
         if (tranType == MessageSysFlag.TRANSACTION_NOT_TYPE
             || tranType == MessageSysFlag.TRANSACTION_COMMIT_TYPE) {
             // Delay Delivery
+            // TODO 处理延迟消息
             if (msg.getDelayTimeLevel() > 0) {
                 if (msg.getDelayTimeLevel() > this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel()) {
                     msg.setDelayTimeLevel(this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel());
                 }
 
+                //TODO 将发送的延迟消息转存到另外的 SCHEDULE_TOPIC_XXXX topic 中
                 topic = ScheduleMessageService.SCHEDULE_TOPIC;
+                // TODO 将延迟等级 -1 作为我们的 queueId
                 queueId = ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel());
 
                 // Backup real topic, queueId
+                // TODO 备份我们的原始 topic, 以及原始 queueId
+                // TODO REAL_TOPIC, REAL_QID
                 MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
                 MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
                 msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));

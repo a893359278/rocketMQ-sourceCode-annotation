@@ -39,7 +39,7 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 
 /**
- * EndTransaction processor: process commit and rollback message
+ * 结束事务消息处理器
  */
 public class EndTransactionProcessor implements NettyRequestProcessor {
     private static final InternalLogger LOGGER = InternalLoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
@@ -49,6 +49,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         this.brokerController = brokerController;
     }
 
+    //todo 处理 END_TRANSACTION
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws
         RemotingCommandException {
@@ -63,6 +64,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         }
 
         if (requestHeader.getFromTransactionCheck()) {
+            // todo 消息回查请求
             switch (requestHeader.getCommitOrRollback()) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE: {
                     LOGGER.warn("Check producer[{}] transaction state, but it's pending status."
@@ -95,6 +97,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                     return null;
             }
         } else {
+            // 结束消息请求
             switch (requestHeader.getCommitOrRollback()) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE: {
                     LOGGER.warn("The producer[{}] end transaction in sending message,  and it's pending status."
@@ -122,9 +125,12 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             }
         }
         OperationResult result = new OperationResult();
+        // todo 事务提交
         if (MessageSysFlag.TRANSACTION_COMMIT_TYPE == requestHeader.getCommitOrRollback()) {
             result = this.brokerController.getTransactionalMessageService().commitMessage(requestHeader);
             if (result.getResponseCode() == ResponseCode.SUCCESS) {
+
+                // todo 对消息进行检查
                 RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
                 if (res.getCode() == ResponseCode.SUCCESS) {
 

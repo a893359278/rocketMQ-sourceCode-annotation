@@ -24,6 +24,7 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 /**
+ * todo 分配消息队列策略
  * Average Hashing queue algorithm
  */
 public class AllocateMessageQueueAveragely implements AllocateMessageQueueStrategy {

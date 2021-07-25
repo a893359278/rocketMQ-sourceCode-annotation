@@ -1247,9 +1247,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         Validators.checkMessage(msg, this.defaultMQProducer);
 
-        // 用消息的属性，标识，该消息是半消息
+        //TODO 用消息的属性，标识，该消息是半消息
         SendResult sendResult = null;
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TRANSACTION_PREPARED, "true");
+        // TODO 属性中写入 生产者组，以便事务回查
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_PRODUCER_GROUP, this.defaultMQProducer.getProducerGroup());
         try {
             // 发送半消息
@@ -1274,7 +1275,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         localTransactionState = localTransactionExecuter.executeLocalTransactionBranch(msg, arg);
                     } else if (transactionListener != null) {
 
-                        // 执行本地事务，正常返回 UNKONW
+                        //TODO 执行本地事务，正常返回 UNKONW
                         log.debug("Used new transaction API");
                         localTransactionState = transactionListener.executeLocalTransaction(msg, arg);
                     }

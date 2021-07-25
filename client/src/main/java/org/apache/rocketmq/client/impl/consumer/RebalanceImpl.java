@@ -40,11 +40,16 @@ import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
+/**
+ * 每个消费组的 rebalance
+ */
 public abstract class RebalanceImpl {
     protected static final InternalLogger log = ClientLogger.getLog();
+    //todo 每一个消费队列，拉取的消息
     protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<MessageQueue, ProcessQueue>(64);
     protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =
         new ConcurrentHashMap<String, Set<MessageQueue>>();
+    // todo 启动的时候被放去的
     protected final ConcurrentMap<String /* topic */, SubscriptionData> subscriptionInner =
         new ConcurrentHashMap<String, SubscriptionData>();
     protected String consumerGroup;

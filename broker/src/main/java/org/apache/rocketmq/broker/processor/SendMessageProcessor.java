@@ -360,6 +360,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
         PutMessageResult putMessageResult = null;
         Map<String, String> oriProps = MessageDecoder.string2messageProperties(requestHeader.getProperties());
+
+        // todo 事务消息标识
         String traFlag = oriProps.get(MessageConst.PROPERTY_TRANSACTION_PREPARED);
         if (traFlag != null && Boolean.parseBoolean(traFlag)
             && !(msgInner.getReconsumeTimes() > 0 && msgInner.getDelayTimeLevel() > 0)) { //For client under version 4.6.1
@@ -371,7 +373,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 return response;
             }
 
-            // 半消息
+            // TODO 转存 半消息
             putMessageResult = this.brokerController.getTransactionalMessageService().prepareMessage(msgInner);
 
         } else {

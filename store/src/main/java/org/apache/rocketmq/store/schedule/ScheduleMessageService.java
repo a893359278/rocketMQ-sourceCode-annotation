@@ -268,7 +268,7 @@ public class ScheduleMessageService extends ConfigManager {
         }
 
         public void executeOnTimeup() {
-            // 从队列中获取消息
+            //TODO 从队列中获取消息
             ConsumeQueue cq =
                 ScheduleMessageService.this.defaultMessageStore.findConsumeQueue(SCHEDULE_TOPIC,
                     delayLevel2QueueId(delayLevel));
@@ -318,7 +318,7 @@ public class ScheduleMessageService extends ConfigManager {
 
                                 if (msgExt != null) {
                                     try {
-                                        // 还原原消息
+                                        //TODO 还原原消息
                                         MessageExtBrokerInner msgInner = this.messageTimeup(msgExt);
                                         // 如果是事务消息，则丢弃。
                                         if (MixAll.RMQ_SYS_TRANS_HALF_TOPIC.equals(msgInner.getTopic())) {

@@ -48,6 +48,7 @@ public class MQClientManager {
         String clientId = clientConfig.buildMQClientId();
         MQClientInstance instance = this.factoryTable.get(clientId);
         if (null == instance) {
+            // todo MQClientInstance 会初始化很多线程.
             instance =
                 new MQClientInstance(clientConfig.cloneClientConfig(),
                     this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);

@@ -37,6 +37,7 @@ import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 
 /**
  * Queue consumption snapshot
+ * todo 远程的消息，拉取下来后，被封装为 ProcessQueue
  */
 public class ProcessQueue {
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =

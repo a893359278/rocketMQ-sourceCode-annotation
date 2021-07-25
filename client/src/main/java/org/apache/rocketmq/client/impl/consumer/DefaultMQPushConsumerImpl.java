@@ -238,6 +238,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         long cachedMessageCount = processQueue.getMsgCount().get();
         long cachedMessageSizeInMiB = processQueue.getMsgSize().get() / (1024 * 1024);
 
+        // todo 流控，本地消息缓存数量大于 1000 时，会产生流控
         if (cachedMessageCount > this.defaultMQPushConsumer.getPullThresholdForQueue()) {
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
@@ -248,6 +249,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             return;
         }
 
+        // todo 流控，本地消息大于 100mb
         if (cachedMessageSizeInMiB > this.defaultMQPushConsumer.getPullThresholdSizeForQueue()) {
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
@@ -272,6 +274,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         } else {
             if (processQueue.isLocked()) {
                 if (!pullRequest.isLockedFirst()) {
+                    // todo 计算从哪里拉取消息
                     final long offset = this.rebalanceImpl.computePullFromWhere(pullRequest.getMessageQueue());
                     boolean brokerBusy = offset < pullRequest.getNextOffset();
                     log.info("the first time to pull message, so fix offset from broker. pullRequest: {} NewOffset: {} brokerBusy: {}",
@@ -293,6 +296,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         final SubscriptionData subscriptionData = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
         if (null == subscriptionData) {
+            // todo 该 consumer 没有订阅数据, 打印
             this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
             log.warn("find the consumer's subscription failed, {}", pullRequest);
             return;
@@ -300,6 +304,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         final long beginTimestamp = System.currentTimeMillis();
 
+        // 消息拉取回调
         PullCallback pullCallback = new PullCallback() {
             @Override
             public void onSuccess(PullResult pullResult) {
@@ -409,6 +414,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         boolean commitOffsetEnable = false;
         long commitOffsetValue = 0L;
         if (MessageModel.CLUSTERING == this.defaultMQPushConsumer.getMessageModel()) {
+            // 拉消息之前，一定是要读滴
             commitOffsetValue = this.offsetStore.readOffset(pullRequest.getMessageQueue(), ReadOffsetType.READ_FROM_MEMORY);
             if (commitOffsetValue > 0) {
                 commitOffsetEnable = true;
@@ -419,6 +425,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         boolean classFilter = false;
         SubscriptionData sd = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
         if (sd != null) {
+            // 每次拉取消息前，更新过滤表达式
             if (this.defaultMQPushConsumer.isPostSubscriptionWhenPull() && !sd.isClassFilterMode()) {
                 subExpression = sd.getSubString();
             }
@@ -623,8 +630,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     }
                     this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
                 }
+                // todo 消费端的消费偏移存储
                 this.offsetStore.load();
 
+                // todo 顺序消费、并发消费
                 if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
                     this.consumeOrderly = true;
                     this.consumeMessageService =
@@ -638,6 +647,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 // todo 清理过期消息
                 this.consumeMessageService.start();
 
+                // todo 将 每个消费者放到 consumer 注册表
                 boolean registerOK = mQClientFactory.registerConsumer(this.defaultMQPushConsumer.getConsumerGroup(), this);
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
@@ -647,6 +657,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         null);
                 }
 
+                // todo 核心类
                 mQClientFactory.start();
                 log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
                 this.serviceState = ServiceState.RUNNING;

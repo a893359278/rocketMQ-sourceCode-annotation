@@ -51,7 +51,7 @@ public class MappedFile extends ReferenceResource {
 
     // todo 消息写入偏移
     protected final AtomicInteger wrotePosition = new AtomicInteger(0);
-    // todo 消息提交偏移
+    // todo 消息提交偏移, transientStorePoolEnable = true 时，才会使用到 committedPosition
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
     // todo 消息刷盘偏移
     private final AtomicInteger flushedPosition = new AtomicInteger(0);
@@ -589,17 +589,4 @@ public class MappedFile extends ReferenceResource {
         return this.fileName;
     }
 
-
-    public static void main(String[] args) {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        buffer.putInt(1);
-        buffer.putInt(2);
-        buffer.putInt(3);
-        buffer.putInt(4);
-//        buffer.flip();
-
-        ByteBuffer slice = buffer.slice();
-        int anInt = slice.getInt();
-        System.out.println(anInt);
-    }
 }

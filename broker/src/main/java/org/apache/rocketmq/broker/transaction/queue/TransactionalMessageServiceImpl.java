@@ -57,6 +57,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         this.transactionalMessageBridge = transactionBridge;
     }
 
+    // TODO 事务消息对应 对应 已处理过的消息队列
     private ConcurrentHashMap<MessageQueue, MessageQueue> opQueueMap = new ConcurrentHashMap<>();
 
     @Override
@@ -128,7 +129,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
 
     /**
      *
-     * @param transactionTimeout The minimum time of the transactional message to be checked firstly, one message only
+     * @param transactionTimeout 事务超时时间，消息存储时间 - 当前时间必须 大于 事务超时时间才会做回查
      * @param transactionCheckMax 最大回查次数，超过会丢弃不处理
      * @param listener When the message is considered to be checked or discarded, the relative method of this class will
      */
@@ -138,7 +139,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         try {
             String topic = MixAll.RMQ_SYS_TRANS_HALF_TOPIC;
 
-            //todo 拉取半消息队列的消息
+            //todo 拉取半消息 TOPIC RMQ_SYS_TRANS_HALF_TOPIC 的消息
             Set<MessageQueue> msgQueues = transactionalMessageBridge.fetchMessageQueues(topic);
             if (msgQueues == null || msgQueues.size() == 0) {
                 log.warn("The queue of topic is empty :" + topic);
@@ -150,7 +151,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                 //TODO 获取 RMQ_SYS_TRANS_OP_HALF_TOPIC 队列
                 MessageQueue opQueue = getOpQueue(messageQueue);
 
-                // 获取消费偏移
+                // 获取当前 RMQ_SYS_TRANS_HALF_TOPIC topic 0queueId 消费偏移
                 long halfOffset = transactionalMessageBridge.fetchConsumeOffset(messageQueue);
                 // 获取 RMQ_SYS_TRANS_OP_HALF_TOPIC 队列的消费偏移
                 long opOffset = transactionalMessageBridge.fetchConsumeOffset(opQueue);
@@ -270,13 +271,13 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
 
                         // 是否需要回查消息
                         if (isNeedCheck) {
-                            // 将消息放回半消息队列
+                            // 复制该消息，并将其放回半消息队列
                             if (!putBackHalfMsgQueue(msgExt, i)) {
                                 continue;
                             }
                             // todo
                             // 使用线程池异步发送半消息。 core 2 max 5 ,keeplive 100s, blockQueue 2000, threadName Transaction-msg-check-thread
-                            // 发送半消息
+                            // 向生产者发送消息回查，查看消息状态
                             listener.resolveHalfMsg(msgExt);
                         } else {
                             // 不需要回查，继续加载消息

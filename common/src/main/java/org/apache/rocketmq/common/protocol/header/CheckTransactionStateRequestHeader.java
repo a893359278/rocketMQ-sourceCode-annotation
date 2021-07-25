@@ -26,6 +26,7 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 
 public class CheckTransactionStateRequestHeader implements CommandCustomHeader {
     @CFNotNull
+    // queueOffset
     private Long tranStateTableOffset;
     @CFNotNull
     private Long commitLogOffset;

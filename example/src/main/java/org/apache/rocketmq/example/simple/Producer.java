@@ -29,7 +29,7 @@ public class Producer {
         producer.setNamesrvAddr("localhost:9876");
         producer.start();
 
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 10; i++)
             try {
                 {
                     // 有多个 key， 可以用 空格 隔开
@@ -37,6 +37,7 @@ public class Producer {
                         "TagA",
                         "OrderID188 asdwe",
                         "Hello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello worldHello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
+                    msg.setDelayTimeLevel(1);
                     SendResult sendResult = producer.send(msg);
                 }
 

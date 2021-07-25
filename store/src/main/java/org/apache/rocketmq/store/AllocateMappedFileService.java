@@ -33,6 +33,9 @@ import org.apache.rocketmq.store.config.BrokerRole;
 
 /**
  * Create MappedFile in advance
+ * TODO 这边提前创建 MappedFile，应该是指 使用 transientStorePool = true 时吧
+ * 正常流程，不会被提前创建
+ *
  */
 public class AllocateMappedFileService extends ServiceThread {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -97,6 +100,7 @@ public class AllocateMappedFileService extends ServiceThread {
         AllocateRequest result = this.requestTable.get(nextFilePath);
         try {
             if (result != null) {
+                // 创建 commitlog 的时候，最多等待 5s
                 boolean waitOK = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
                 if (!waitOK) {
                     log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());

@@ -67,6 +67,9 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
+/**
+ * 不管是推、拉 最后都是走到该方法中
+ */
 public class PullMessageProcessor implements NettyRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerController brokerController;
@@ -98,6 +101,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         log.debug("receive PullMessage request command, {}", request);
 
+        // todo 检查权限
         if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
             response.setCode(ResponseCode.NO_PERMISSION);
             response.setRemark(String.format("the broker[%s] pulling message is forbidden", this.brokerController.getBrokerConfig().getBrokerIP1()));
@@ -124,6 +128,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         final long suspendTimeoutMillisLong = hasSuspendFlag ? requestHeader.getSuspendTimeoutMillis() : 0;
 
+        // todo 检查 topic 是否存在
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {
             log.error("the topic {} not exist, consumer: {}", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
@@ -132,6 +137,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
+        // todo 权限校验
         if (!PermName.isReadable(topicConfig.getPerm())) {
             response.setCode(ResponseCode.NO_PERMISSION);
             response.setRemark("the topic[" + requestHeader.getTopic() + "] pulling message is forbidden");
@@ -149,6 +155,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         SubscriptionData subscriptionData = null;
         ConsumerFilterData consumerFilterData = null;
+        // todo 是否有过滤
         if (hasSubscriptionFlag) {
             try {
                 subscriptionData = FilterAPI.build(

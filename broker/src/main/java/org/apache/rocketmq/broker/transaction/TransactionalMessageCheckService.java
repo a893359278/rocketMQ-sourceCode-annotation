@@ -23,7 +23,7 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 
 /**
- * 事务回查
+ * todo 事务回查线程
  */
 public class TransactionalMessageCheckService extends ServiceThread {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
@@ -44,7 +44,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
         log.info("Start transaction check service thread!");
         long checkInterval = brokerController.getBrokerConfig().getTransactionCheckInterval();
         while (!this.isStopped()) {
+            System.out.println("我执行了事务消息回查 " + System.currentTimeMillis());
             this.waitForRunning(checkInterval);
+            System.out.println("我执行完了事务消息回查 " + System.currentTimeMillis());
         }
         log.info("End transaction check service thread!");
     }

@@ -166,6 +166,7 @@ public class PullAPIWrapper {
 
         if (findBrokerResult != null) {
             {
+                // todo 4.1 版本才支持 tag 过滤？
                 // check version
                 if (!ExpressionType.isTagType(expressionType)
                     && findBrokerResult.getBrokerVersion() < MQVersion.Version.V4_1_0_SNAPSHOT.ordinal()) {
@@ -179,6 +180,7 @@ public class PullAPIWrapper {
                 sysFlagInner = PullSysFlag.clearCommitOffsetFlag(sysFlagInner);
             }
 
+            // todo 构建拉取请求头
             PullMessageRequestHeader requestHeader = new PullMessageRequestHeader();
             requestHeader.setConsumerGroup(this.consumerGroup);
             requestHeader.setTopic(mq.getTopic());
@@ -186,17 +188,27 @@ public class PullAPIWrapper {
             requestHeader.setQueueOffset(offset);
             requestHeader.setMaxMsgNums(maxNums);
             requestHeader.setSysFlag(sysFlagInner);
+
+            //
             requestHeader.setCommitOffset(commitOffset);
+
+            // long polling mode, 最大 20s
             requestHeader.setSuspendTimeoutMillis(brokerSuspendMaxTimeMillis);
+            // 过滤表达式
             requestHeader.setSubscription(subExpression);
             requestHeader.setSubVersion(subVersion);
+            //  表达式类型，一般有 tag, SQL92
             requestHeader.setExpressionType(expressionType);
 
             String brokerAddr = findBrokerResult.getBrokerAddr();
+
+            // todo 类过滤？
             if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {
                 brokerAddr = computPullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
 
+            // todo 拉取请求头 RequestCode#PULL_MESSAGE
+            // todo 拉取消息也有分 同步和异步, 消息拉取默认是同步的
             PullResult pullResult = this.mQClientFactory.getMQClientAPIImpl().pullMessage(
                 brokerAddr,
                 requestHeader,

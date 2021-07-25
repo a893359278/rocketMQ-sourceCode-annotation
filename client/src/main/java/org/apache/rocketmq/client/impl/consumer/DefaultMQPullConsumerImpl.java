@@ -265,6 +265,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
             CommunicationMode.SYNC,
             null
         );
+        // TODO rocketMQ 是在 消费端进行过滤的
         this.pullAPIWrapper.processPullResult(mq, pullResult, subscriptionData);
         //If namespace is not null , reset Topic without namespace.
         this.resetTopic(pullResult.getMsgFoundList());
@@ -531,7 +532,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
     public PullResult pullBlockIfNotFound(MessageQueue mq, String subExpression, long offset, int maxNums)
         throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         SubscriptionData subscriptionData = getSubscriptionData(mq, subExpression);
-        return this.pullSyncImpl(mq, subscriptionData, offset, maxNums, true, this.getDefaultMQPullConsumer().getConsumerPullTimeoutMillis());
+        return this.pullSyncImpl(mq, subscriptionData, offset, maxNums, true, /* 10s 超时 */this.getDefaultMQPullConsumer().getConsumerPullTimeoutMillis());
     }
 
     public DefaultMQPullConsumer getDefaultMQPullConsumer() {

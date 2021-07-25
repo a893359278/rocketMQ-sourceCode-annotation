@@ -239,10 +239,11 @@ public class MQClientInstance {
                     // Start request-response channel
                     this.mQClientAPIImpl.start();
                     // Start various schedule tasks
+                    // todo 持久化 消费偏移
                     this.startScheduledTask();
-                    // Start pull service
+                    // todo Start pull service
                     this.pullMessageService.start();
-                    // Start rebalance service
+                    // todo Start rebalance service
                     this.rebalanceService.start();
                     // Start push service
                     this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
@@ -990,6 +991,7 @@ public class MQClientInstance {
     }
 
     public void doRebalance() {
+        // todo 启动的时候 consumerTable 就放进去了
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {

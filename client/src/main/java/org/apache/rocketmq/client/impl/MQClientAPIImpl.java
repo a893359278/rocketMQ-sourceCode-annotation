@@ -785,6 +785,7 @@ public class MQClientAPIImpl {
     ) throws RemotingException, InterruptedException, MQBrokerException {
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
+        // todo 处理返回值
         return this.processPullResponse(response);
     }
 
