@@ -32,4 +32,14 @@ public class StoreUtil {
 
         return physicalTotal;
     }
+
+    public static void main(String[] args) {
+        long physicalTotal = 0;
+        OperatingSystemMXBean osmxb = ManagementFactory.getOperatingSystemMXBean();
+        if (osmxb instanceof com.sun.management.OperatingSystemMXBean) {
+            physicalTotal = ((com.sun.management.OperatingSystemMXBean) osmxb).getTotalPhysicalMemorySize();
+        }
+
+        System.out.println(physicalTotal);
+    }
 }

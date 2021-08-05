@@ -204,6 +204,7 @@ public abstract class NettyRemotingAbstract {
                         doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd, response);
 
                         if (!cmd.isOnewayRPC()) {
+                            // todo 不等于 null 才会 flush
                             if (response != null) {
                                 response.setOpaque(opaque);
                                 response.markResponseType();

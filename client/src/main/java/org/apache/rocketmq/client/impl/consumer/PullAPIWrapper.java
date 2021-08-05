@@ -192,7 +192,7 @@ public class PullAPIWrapper {
             //
             requestHeader.setCommitOffset(commitOffset);
 
-            // long polling mode, 最大 20s
+            // long polling mode, 最大 15s
             requestHeader.setSuspendTimeoutMillis(brokerSuspendMaxTimeMillis);
             // 过滤表达式
             requestHeader.setSubscription(subExpression);

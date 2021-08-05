@@ -489,6 +489,17 @@ public class DefaultMessageStore implements MessageStore {
         return commitLog;
     }
 
+    /**
+     * 拉取消息，如果 broker 物理内存使用率大于 40%，
+     * 则建议 consumer 从 slave 拉取消息
+     * @param group Consumer group that launches this query.
+     * @param topic Topic to query.
+     * @param queueId Queue ID to query.
+     * @param offset Logical offset to start from.
+     * @param maxMsgNums Maximum count of messages to query.
+     * @param messageFilter Message filter used to screen desired messages.
+     * @return
+     */
     public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
         final int maxMsgNums,
         final MessageFilter messageFilter) {
@@ -588,6 +599,7 @@ public class DefaultMessageStore implements MessageStore {
                                 continue;
                             }
 
+                            // todo 从 commitLog 中取消息
                             SelectMappedBufferResult selectResult = this.commitLog.getMessage(offsetPy, sizePy);
                             if (null == selectResult) {
                                 if (getResult.getBufferTotalSize() == 0) {
@@ -619,6 +631,7 @@ public class DefaultMessageStore implements MessageStore {
                             brokerStatsManager.recordDiskFallBehindSize(group, topic, queueId, fallBehind);
                         }
 
+                        // todo 计算 master 是否太慢了。如果是，则让 master 从 slave 拉取
                         nextBeginOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
 
                         long diff = maxOffsetPy - maxPhyOffsetPulling;
@@ -1865,7 +1878,7 @@ public class DefaultMessageStore implements MessageStore {
                                     // todo 开始分发消息
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
-                                    // TODO 消费端逻辑
+                                    // TODO 长轮询，通知 Broker 消息来了
                                     if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()
                                         && DefaultMessageStore.this.brokerConfig.isLongPollingEnable()) {
                                         DefaultMessageStore.this.messageArrivingListener.arriving(dispatchRequest.getTopic(),

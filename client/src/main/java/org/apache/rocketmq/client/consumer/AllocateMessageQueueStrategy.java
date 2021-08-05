@@ -29,6 +29,8 @@ public interface AllocateMessageQueueStrategy {
      *
      * @param consumerGroup current consumer group
      * @param currentCID current consumer id
+     * todo 10.10.10.118@75196 clientIP@InstanceName
+     * todo 其中 clientIP 一般改不了, 能修改的就是 InstanceName
      * @param mqAll message queue set in current topic
      * @param cidAll consumer set in current consumer group
      * @return The allocate result of given strategy

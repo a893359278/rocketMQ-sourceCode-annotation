@@ -45,6 +45,12 @@ public class SlaveSynchronize {
         this.masterAddr = masterAddr;
     }
 
+    /**
+     * 同步 topic
+     * 同步消费偏移
+     * 同步延迟偏移
+     * 同步订阅信息
+     */
     public void syncAll() {
         this.syncTopicConfig();
         this.syncConsumerOffset();

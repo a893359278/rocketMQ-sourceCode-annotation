@@ -344,7 +344,7 @@ public class BrokerController {
                 }
             }, initialDelay, period, TimeUnit.MILLISECONDS);
 
-            // todo 每隔 10s 定时持久化消费偏移文件
+            // todo 每隔 5s 定时持久化消费偏移文件
             this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
@@ -882,6 +882,7 @@ public class BrokerController {
             this.filterServerManager.start();
         }
 
+        // todo 非 Dleger 模式，主从同步
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
             startProcessorByHa(messageStoreConfig.getBrokerRole());
             handleSlaveSynchronize(messageStoreConfig.getBrokerRole());

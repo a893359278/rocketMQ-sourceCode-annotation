@@ -24,7 +24,10 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 /**
- * todo 分配消息队列策略
+ * todo 默认的分配消息队列策略。平均分配
+ * consume1: queue1,queue2,queue3
+ * consume2: queue4,queue5,queue6
+ * consume3: queue7,queue8,queue9
  * Average Hashing queue algorithm
  */
 public class AllocateMessageQueueAveragely implements AllocateMessageQueueStrategy {

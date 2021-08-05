@@ -75,7 +75,7 @@ public class AllocateMachineRoomNearby implements AllocateMessageQueueStrategy {
                 cidAll);
             return result;
         }
-
+        //todo 将消息队列按照机房分组
         //group mq by machine room
         Map<String/*machine room */, List<MessageQueue>> mr2Mq = new TreeMap<String, List<MessageQueue>>();
         for (MessageQueue mq : mqAll) {
@@ -89,7 +89,7 @@ public class AllocateMachineRoomNearby implements AllocateMessageQueueStrategy {
                 throw new IllegalArgumentException("Machine room is null for mq " + mq);
             }
         }
-
+        // todo 将消费者按机房分组
         //group consumer by machine room
         Map<String/*machine room */, List<String/*clientId*/>> mr2c = new TreeMap<String, List<String>>();
         for (String cid : cidAll) {

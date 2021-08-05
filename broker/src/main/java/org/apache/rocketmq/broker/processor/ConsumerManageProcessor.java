@@ -56,9 +56,11 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
         switch (request.getCode()) {
             case RequestCode.GET_CONSUMER_LIST_BY_GROUP:
                 return this.getConsumerListByGroup(ctx, request);
+                // todo 持久化消息偏移
             case RequestCode.UPDATE_CONSUMER_OFFSET:
                 return this.updateConsumerOffset(ctx, request);
             case RequestCode.QUERY_CONSUMER_OFFSET:
+                // todo 查询消费偏移
                 return this.queryConsumerOffset(ctx, request);
             default:
                 break;
