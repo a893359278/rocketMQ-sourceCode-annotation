@@ -192,7 +192,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             maxReconsumeTimes = requestHeader.getMaxReconsumeTimes();
         }
 
-        // 如果消息重试次数超过 maxReconsumeTimes，再次改写 newTopic 主题为 %DLQ%，
+        // 如果消息重试次数超过 maxReconsumeTimes，改写 主题为 %DLQ%，
         // 该主题的权限为只写，说明消息一旦进入到 DLQ 队列中，RocketMQ 将不在负责再次调度
         // 消费，需要人工干预。
         if (msgExt.getReconsumeTimes() >= maxReconsumeTimes
@@ -210,6 +210,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 return response;
             }
         } else {
+            //todo 从 第 3 个延迟等级开始
             if (0 == delayLevel) {
                 delayLevel = 3 + msgExt.getReconsumeTimes();
             }
@@ -236,6 +237,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         String originMsgId = MessageAccessor.getOriginMessageId(msgExt);
         MessageAccessor.setOriginMessageId(msgInner, UtilAll.isBlank(originMsgId) ? msgExt.getMsgId() : originMsgId);
 
+        // commitlog 存储消息时，发现 delayLevel 大于0，就会转存 topic
         // 交由 commitlog 存入消息
         PutMessageResult putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
         if (putMessageResult != null) {

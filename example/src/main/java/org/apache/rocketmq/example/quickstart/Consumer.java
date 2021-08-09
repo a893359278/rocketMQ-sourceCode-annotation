@@ -35,7 +35,7 @@ public class Consumer {
         /*
          * Instantiate with specified consumer group name.
          */
-        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("TestConsumer10");
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("TestConsumer");
         consumer.setNamesrvAddr("127.0.0.1:9876");
         /*
          * Specify name server addresses.
@@ -58,9 +58,9 @@ public class Consumer {
          * Subscribe one more more topics to consume.
          */
         consumer.subscribe("TopicTest", "*");
-        consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-        consumer.setPullThresholdForQueue(10000);
-        consumer.setPullBatchSize(100);
+        consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+
+        consumer.setConsumeMessageBatchMaxSize(10);
 //        consumer.setPullThresholdSizeForQueue();
 //        consumer.setSuspendCurrentQueueTimeMillis();
         /*
@@ -71,9 +71,10 @@ public class Consumer {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                 ConsumeConcurrentlyContext context) {
-
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                System.out.println(System.currentTimeMillis() + " 消费消息");
+//                System.out.println("一次消费多少条数据？ "  + msgs.size());
+//                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         });
 

@@ -144,7 +144,7 @@ public class ScheduleMessageService extends ConfigManager {
                         log.error("scheduleAtFixedRate flush exception", e);
                     }
                 }
-            }, 10000, this.defaultMessageStore.getMessageStoreConfig().getFlushDelayOffsetInterval());
+            }, 10000, this.defaultMessageStore.getMessageStoreConfig().getFlushDelayOffsetInterval()/*默认 10000 */);
         }
     }
 
