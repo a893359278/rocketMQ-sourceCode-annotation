@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.example.simple;
 
+import org.apache.rocketmq.client.MQAdmin;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
@@ -29,7 +30,7 @@ public class Producer {
         producer.setNamesrvAddr("localhost:9876");
         producer.start();
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 1000; i++)
             try {
                 {
                     // 有多个 key， 可以用 空格 隔开

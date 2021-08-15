@@ -280,6 +280,7 @@ public class HAService {
                 if (!this.requestsRead.isEmpty()) {
                     for (CommitLog.GroupCommitRequest req : this.requestsRead) {
                         boolean transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
+                        // todo 等待 5m 的刷盘
                         long waitUntilWhen = HAService.this.defaultMessageStore.getSystemClock().now()
                             + HAService.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout();
                         while (!transferOK && HAService.this.defaultMessageStore.getSystemClock().now() < waitUntilWhen) {
@@ -325,6 +326,9 @@ public class HAService {
         }
     }
 
+    /**
+     * HA 主从，是 从主动向 从汇报拉取偏移，主根据从拉取偏移，返回下一批 CommitLog
+     */
     class HAClient extends ServiceThread {
         private static final int READ_MAX_BUFFER_SIZE = 1024 * 1024 * 4;
         private final AtomicReference<String> masterAddress = new AtomicReference<>();
@@ -350,6 +354,12 @@ public class HAService {
             }
         }
 
+        /**
+         * 如果超过 5s 没有发送偏移量，则要求发送心跳.
+         *
+         * slave 的心跳是指：向 master 发送拉取偏移
+         * @return
+         */
         private boolean isTimeToReportOffset() {
             long interval =
                 HAService.this.defaultMessageStore.getSystemClock().now() - this.lastWriteTimestamp;
@@ -544,6 +554,9 @@ public class HAService {
             }
         }
 
+        /**
+         * 间隔一秒，向 master 拉取消息
+         */
         @Override
         public void run() {
             log.info(this.getServiceName() + " service started");
@@ -553,6 +566,7 @@ public class HAService {
                     if (this.connectMaster()) {
 
                         if (this.isTimeToReportOffset()) {
+                            // 发送心跳
                             boolean result = this.reportSlaveMaxOffset(this.currentReportedOffset);
                             if (!result) {
                                 this.closeMaster();
@@ -570,11 +584,12 @@ public class HAService {
                             continue;
                         }
 
+                        // todo 从向 master 拉取 超过 20s，则认为 master 已经挂掉了。
                         long interval =
                             HAService.this.getDefaultMessageStore().getSystemClock().now()
                                 - this.lastWriteTimestamp;
                         if (interval > HAService.this.getDefaultMessageStore().getMessageStoreConfig()
-                            .getHaHousekeepingInterval()) {
+                            .getHaHousekeepingInterval() /* 20s */) {
                             log.warn("HAClient, housekeeping, found this connection[" + this.masterAddress
                                 + "] expired, " + interval);
                             this.closeMaster();

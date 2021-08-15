@@ -60,7 +60,7 @@ public class Consumer {
         consumer.subscribe("TopicTest", "*");
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
 
-        consumer.setConsumeMessageBatchMaxSize(10);
+//        consumer.setConsumeMessageBatchMaxSize(10);
 //        consumer.setPullThresholdSizeForQueue();
 //        consumer.setSuspendCurrentQueueTimeMillis();
         /*
@@ -72,9 +72,12 @@ public class Consumer {
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                 ConsumeConcurrentlyContext context) {
                 System.out.println(System.currentTimeMillis() + " 消费消息");
+                for (MessageExt msg : msgs) {
+                    System.out.println(msg.toString());
+                }
 //                System.out.println("一次消费多少条数据？ "  + msgs.size());
 //                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
-                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });
 

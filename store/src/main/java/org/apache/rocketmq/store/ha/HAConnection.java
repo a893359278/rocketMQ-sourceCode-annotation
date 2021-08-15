@@ -161,6 +161,7 @@ public class HAConnection {
                         this.lastReadTimestamp = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
                         if ((this.byteBufferRead.position() - this.processPosition) >= 8) {
                             int pos = this.byteBufferRead.position() - (this.byteBufferRead.position() % 8);
+                            // todo 获取要从哪里哪个位置读消息
                             long readOffset = this.byteBufferRead.getLong(pos - 8);
                             this.processPosition = pos;
 
@@ -221,13 +222,18 @@ public class HAConnection {
                         continue;
                     }
 
+                    // slave 第一次连接走该方法
                     if (-1 == this.nextTransferFromWhere) {
                         if (0 == HAConnection.this.slaveRequestOffset) {
+                            // 拿到 master 自己最大的消息偏移量
                             long masterOffset = HAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
-                            masterOffset =
-                                masterOffset
-                                    - (masterOffset % HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
-                                    .getMappedFileSizeCommitLog());
+                            System.out.println("计算出的 masterOffset " + masterOffset);
+
+                            long tmp = masterOffset % HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
+                                    .getMappedFileSizeCommitLog();
+                            System.out.println("需要被扣掉的偏移量 " + tmp);
+
+                            masterOffset = masterOffset - (tmp);
 
                             if (masterOffset < 0) {
                                 masterOffset = 0;
@@ -267,15 +273,19 @@ public class HAConnection {
                             continue;
                     }
 
+                    // 根据偏移量，拿到 CommitLog
+                    // todo 如果主从 偏移量差很多，那么这里拿到的数据量就会非常大。
                     SelectMappedBufferResult selectResult =
                         HAConnection.this.haService.getDefaultMessageStore().getCommitLogData(this.nextTransferFromWhere);
                     if (selectResult != null) {
                         int size = selectResult.getSize();
+                        System.out.println("主从同步复制，传递的消息数量 " + size);
                         if (size > HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
                             size = HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize();
                         }
 
                         long thisOffset = this.nextTransferFromWhere;
+                        // TODO 设置下一次的偏移量
                         this.nextTransferFromWhere += size;
 
                         selectResult.getByteBuffer().limit(size);
